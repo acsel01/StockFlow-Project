@@ -1,0 +1,14 @@
+:root {
+  --stockflow-bg: #0f172a;
+  --stockflow-accent: #34d399;
+}
+
+body {
+  background: #f8fafc;
+  color: var(--stockflow-bg);
+}
+
+.navbar-brand,
+.badge {
+  letter-spacing: 0.02em;
+}
