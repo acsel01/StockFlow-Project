@@ -24,7 +24,7 @@ Las siguientes funcionalidades conforman el alcance planificado para la primera 
 - Punto de venta con descuento automático de existencias.
 - Apertura, seguimiento y cierre básico de caja.
 - Historial y detalle de ventas.
-- Estadísticas de ventas, facturación e inventario.
+- Estadísticas de ventas, total vendido e inventario.
 - Catálogo público con estados de disponibilidad.
 - Diseño adaptable a computadora y celular.
 
