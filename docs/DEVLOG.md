@@ -66,4 +66,4 @@ La capa de acceso SQLite del Issue #7 quedó implementada, integrada y cubierta 
 
 ### Pendiente
 
-Revisar los commits y abrir posteriormente un Pull Request hacia `develop`. No se realizó merge ni se avanzó con otros Issues.
+Pull Request #19 abierto hacia `develop`, revisado y pendiente de merge. No se avanzó con otros Issues.
