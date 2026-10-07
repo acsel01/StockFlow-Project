@@ -1,24 +1,14 @@
 import os
-import sqlite3
 from pathlib import Path
 
 from flask import Flask, jsonify, redirect, url_for
 
+from database.db import close_db, init_db
 from routes import register_blueprints
 
 
 BASE_DIR = Path(__file__).resolve().parent
 DEFAULT_DATABASE = BASE_DIR / "database" / "stockflow.db"
-SCHEMA_PATH = BASE_DIR / "database" / "schema.sql"
-
-
-def initialize_database(database_path: Path) -> None:
-    """Crea las tablas iniciales si todavía no existen."""
-    database_path.parent.mkdir(parents=True, exist_ok=True)
-
-    with sqlite3.connect(database_path) as connection:
-        connection.execute("PRAGMA foreign_keys = ON")
-        connection.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
 
 
 def create_app(test_config=None) -> Flask:
@@ -31,7 +21,11 @@ def create_app(test_config=None) -> Flask:
     if test_config:
         app.config.update(test_config)
 
-    initialize_database(Path(app.config["DATABASE"]))
+    app.teardown_appcontext(close_db)
+
+    with app.app_context():
+        init_db()
+
     register_blueprints(app)
 
     @app.get("/")
