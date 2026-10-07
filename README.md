@@ -19,13 +19,13 @@ Las siguientes funcionalidades conforman el alcance planificado para la primera 
 - Inicio de sesión y permisos para administradores y vendedores.
 - Dashboard con información resumida del comercio.
 - Alta, edición, consulta y baja lógica de productos.
-- Categorías, precios, código de barras y visibilidad pública.
+- Categorías, precios, código de barras, visibilidad del producto y publicación configurable del precio.
 - Inventario integrado y registro de movimientos de stock.
 - Punto de venta con descuento automático de existencias.
 - Apertura, seguimiento y cierre básico de caja.
 - Historial y detalle de ventas.
 - Estadísticas de ventas, total vendido e inventario.
-- Catálogo público con estados de disponibilidad.
+- Catálogo público con estados de disponibilidad y precio solo cuando el comercio habilita su publicación.
 - Diseño adaptable a computadora y celular.
 
 No forman parte del MVP la facturación fiscal, los pagos en línea, los proveedores, las múltiples sucursales ni la geolocalización avanzada.
@@ -82,7 +82,7 @@ SQLite
 
 Las rutas reciben las peticiones y delegan la lógica de negocio a los servicios. La operación **Confirmar venta** deberá ejecutarse dentro de una transacción: crear la venta y sus detalles, descontar stock y registrar los movimientos; si una parte falla, se revierte toda la operación.
 
-El esquema inicial contempla nueve entidades: Comercio, Usuario, Categoría, Producto, Inventario, MovimientoInventario, Caja, Venta y DetalleVenta.
+El esquema contempla nueve entidades: Comercio, Usuario, Categoría, Producto, Inventario, MovimientoInventario, Caja, Venta y DetalleVenta. Producto mantiene un único `precio_venta` y un indicador `mostrar_precio_catalogo` que decide si ese mismo valor puede exponerse públicamente.
 
 ## Estructura del proyecto
 
@@ -182,12 +182,13 @@ También está disponible el endpoint `/health` para comprobar que la aplicació
 ## Estado del proyecto
 
 - **Etapas 1 y 2:** completadas.
-- **Etapa 3 — Investigación de usuarios y mercado:** en progreso; continúa abierta porque requiere evidencia real de encuestas y entrevistas.
-- **Etapas 4 a 14:** documentación funcional, UX/UI, modelo de datos y arquitectura elaborados.
-- **Etapa 15 — GitHub y control de versiones:** repositorio y base técnica en preparación para el desarrollo.
+- **Etapa 3 — Investigación de usuarios y mercado:** completada con evidencia real: encuestas separadas a comercios y clientes, entrevistas y análisis de resultados.
+- **Etapa 4 — Alcance y MVP:** validada después de la investigación. El MVP mantiene catálogo informativo y agrega publicación configurable del precio.
+- **Etapas 5 a 14:** documentación funcional, UX/UI, requerimientos, historias, backlog, modelo de datos y arquitectura alineados con el alcance validado.
+- **Etapa 15 — GitHub y control de versiones:** repositorio y base técnica preparados; las ramas feature y Pull Requests se crearán cuando comience trabajo real de desarrollo.
 - **Implementación:** estructura inicial creada; los módulos funcionales todavía se encuentran en el backlog.
 
-Este estado no declara completada la Etapa 3 ni funcionalidades que todavía no fueron implementadas.
+La documentación diferencia explícitamente entre diseño aprobado e implementación real. StockFlow se presenta como MVP/demo escolar, no como sistema listo para producción comercial.
 
 ## Metodología de trabajo
 
