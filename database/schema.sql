@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS producto (
     precio_venta DECIMAL(10,2) NOT NULL CHECK (precio_venta >= 0),
     imagen_url VARCHAR(255),
     visible_catalogo BOOLEAN NOT NULL DEFAULT 0 CHECK (visible_catalogo IN (0, 1)),
+    mostrar_precio_catalogo BOOLEAN NOT NULL DEFAULT 0 CHECK (mostrar_precio_catalogo IN (0, 1)),
     activo BOOLEAN NOT NULL DEFAULT 1 CHECK (activo IN (0, 1)),
     fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (id_comercio, codigo_barras),
