@@ -227,4 +227,4 @@ El Issue #9 quedó implementado y probado: ADMIN puede gestionar Productos y Cat
 
 ### Pendiente
 
-Revisión local, push de `feature/productos` y posterior Pull Request hacia `develop`. No se realizó merge, no se abrió PR y no se avanzó con el Issue #10.
+Pull Request #21 abierto desde `feature/productos` hacia `develop`, revisado y pendiente de merge. No se avanzó con el Issue #10.
