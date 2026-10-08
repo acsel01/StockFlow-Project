@@ -761,6 +761,7 @@ Implementar el catálogo informativo y público de StockFlow para que cualquier 
 - No existe un segundo precio: el único importe público posible es el `Producto.precio_venta` actual. Las cuatro combinaciones de `visible_catalogo` y `mostrar_precio_catalogo` respetan la precedencia de la visibilidad.
 - Catálogo representa información vigente, por lo que un cambio en `precio_venta` se refleja en la siguiente consulta. En cambio, `DetalleVenta` conserva el precio histórico de una operación confirmada.
 - Todas las consultas se aíslan por comercio. Los productos, categorías, precios, costos y existencias de otra tienda no integran la proyección solicitada.
+- Además de filtrar por `commerce_id`, los joins entre Producto y Categoría exigen que ambos pertenezcan al mismo comercio. Esta defensa en profundidad evita proyectar asociaciones inconsistentes introducidas directamente en SQLite o por futuras regresiones fuera del CRUD validado.
 - El acceso es anónimo y de solo lectura. Los endpoints públicos no ejecutan `INSERT`, `UPDATE`, `DELETE` ni `commit`.
 - Un comercio activo sin publicaciones muestra un estado vacío específico; una búsqueda o filtro sin coincidencias muestra un estado de resultados distinto.
 - La superposición con el Issue #17 se resolvió reutilizando las banderas ya administradas por Productos y la única fuente de precio existente. El Issue queda funcionalmente cubierto, pero permanece abierto hasta su revisión administrativa.
@@ -781,9 +782,9 @@ Se ejecutó la suite completa con:
 .venv\Scripts\python.exe -m pytest -q
 ```
 
-Resultado: `274 passed`.
+Resultado: `275 passed`.
 
-Las 26 pruebas nuevas cubren acceso público sin sesión, selector de comercios activos, comercios inexistentes o inactivos, proyección permitida, valores centinela de costo y stock, las cuatro combinaciones de publicación del Issue #17, precio oculto, producto oculto, producto y categoría inactivos, desactivación de categoría, ausencia de Inventario, los tres estados derivados, cambios sucesivos de stock, precio actual, búsqueda parcial, filtro válido, categoría inválida o ajena, aislamiento entre dos comercios, comercio vacío, claves exactas de la proyección, integración con una Venta confirmada y garantía de solo lectura.
+Las 27 pruebas nuevas cubren acceso público sin sesión, selector de comercios activos, comercios inexistentes o inactivos, proyección permitida, valores centinela de costo y stock, las cuatro combinaciones de publicación del Issue #17, precio oculto, producto oculto, producto y categoría inactivos, desactivación de categoría, ausencia de Inventario, los tres estados derivados, cambios sucesivos de stock, precio actual, búsqueda parcial, filtro válido, categoría inválida o ajena, aislamiento entre dos comercios, rechazo de asociaciones Producto-Categoría inconsistentes entre comercios, comercio vacío, claves exactas de la proyección, integración con una Venta confirmada y garantía de solo lectura.
 
 Los 248 tests anteriores continúan pasando. Se ejecutó además `.venv\Scripts\python.exe -m compileall -q app.py database routes services tests utils`, sin errores.
 

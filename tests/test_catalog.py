@@ -623,6 +623,55 @@ def test_catalog_is_isolated_between_active_commerces(app, client):
     assert "Yerba pública" not in page_b
 
 
+def test_catalog_rejects_product_linked_to_category_from_another_commerce(
+    app,
+    client,
+):
+    ids = app.config["TEST_IDS"]
+    with app.app_context():
+        connection = get_db()
+        inconsistent_product = connection.execute(
+            """
+            INSERT INTO producto (
+                id_comercio,
+                id_categoria,
+                nombre,
+                descripcion,
+                codigo_barras,
+                precio_compra,
+                precio_venta,
+                visible_catalogo,
+                mostrar_precio_catalogo,
+                activo
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 1, 1)
+            """,
+            (
+                ids["commerce_a"],
+                ids["category_b"],
+                "PRODUCTO-INCONSISTENTE-ENTRE-COMERCIOS",
+                "DESCRIPCION-CENTINELA-ENTRE-COMERCIOS",
+                "CODIGO-INCONSISTENTE-ENTRE-COMERCIOS",
+                "1.00",
+                "765432.10",
+            ),
+        ).lastrowid
+        connection.execute(
+            """
+            INSERT INTO inventario (id_producto, stock_actual, stock_minimo)
+            VALUES (?, 10, 1)
+            """,
+            (inconsistent_product,),
+        )
+        connection.commit()
+
+    page = client.get(_catalog_path(app)).get_data(as_text=True)
+
+    assert "PRODUCTO-INCONSISTENTE-ENTRE-COMERCIOS" not in page
+    assert "DESCRIPCION-CENTINELA-ENTRE-COMERCIOS" not in page
+    assert "765432.10" not in page
+    assert "Categoría B" not in page
+
+
 def test_empty_commerce_has_clear_state(app, client):
     ids = app.config["TEST_IDS"]
 

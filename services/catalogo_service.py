@@ -32,9 +32,11 @@ def get_public_categories(connection, commerce_id):
     return connection.execute(
         """
         SELECT DISTINCT c.id_categoria, c.nombre
-        FROM categoria AS c
-        JOIN comercio AS co ON co.id_comercio = c.id_comercio
-        JOIN producto AS p ON p.id_categoria = c.id_categoria
+        FROM producto AS p
+        JOIN comercio AS co ON co.id_comercio = p.id_comercio
+        JOIN categoria AS c
+            ON c.id_categoria = p.id_categoria
+            AND c.id_comercio = p.id_comercio
         JOIN inventario AS i ON i.id_producto = p.id_producto
         WHERE
             c.id_comercio = ?
@@ -82,7 +84,9 @@ def get_public_catalog(
             i.stock_minimo
         FROM producto AS p
         JOIN comercio AS co ON co.id_comercio = p.id_comercio
-        JOIN categoria AS c ON c.id_categoria = p.id_categoria
+        JOIN categoria AS c
+            ON c.id_categoria = p.id_categoria
+            AND c.id_comercio = p.id_comercio
         JOIN inventario AS i ON i.id_producto = p.id_producto
         WHERE
             p.id_comercio = ?
