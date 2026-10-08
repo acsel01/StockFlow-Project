@@ -811,3 +811,135 @@ No se creó una rama `feature/precio-publico` separada porque hubiera duplicado 
 ### Pendiente
 
 No queda trabajo funcional pendiente para los Issues #15 y #17. El siguiente bloque corresponde al Issue #16 de testing e integración final del MVP.
+
+## 2026-10-08 — Issue #16: Testing e integración del MVP
+
+### Rama
+
+`test/integracion-mvp`
+
+### Objetivo
+
+Validar como conjunto el MVP ya implementado, agregar evidencia cross-module de sus flujos críticos, preparar datos demo reproducibles y actualizar la documentación técnica antes de promover una versión revisada. Este Issue no crea un módulo ni agrega reglas de negocio nuevas.
+
+### Estado base
+
+- `develop`: `87bd4cc7f601d64507efde2ef673fc469e635177`.
+- Suite recibida: `275 passed`.
+- Trazabilidad principal: `PB28 · PB29 · PB30`.
+
+### Cambios realizados
+
+- Se agregaron cinco pruebas de integración del MVP que recorren rutas HTTP, persistencia y consumidores posteriores.
+- Se implementaron escenarios negativos cross-module para ausencia de Caja y cambio de stock antes de confirmar.
+- Se agregó una matriz representativa de permisos para visitante, VENDEDOR y ADMIN.
+- Se verificó el inicio real desde un archivo SQLite inexistente, las nueve tablas, claves foráneas y `/health`.
+- Se incorporó un seed manual para demo con base separada, credenciales conocidas, productos públicos/ocultos y distintos estados de Inventario.
+- Se agregaron dos pruebas del seed: contenido y credenciales; protección contra sobrescritura y `--reset` explícito.
+- Se actualizó README para describir en presente el MVP real, instalación, configuración, ejecución, demo, tests y estrategia de ramas.
+- Se creó `docs/TESTING_MVP.md` con alcance automatizado, rollback, aislamiento, checklist visual e incidencias.
+- Se auditó deuda y rutas. El template placeholder no tenía referencias activas y fue eliminado.
+
+### Archivos creados o modificados
+
+- `tests/test_mvp_integration.py`
+- `tests/test_seed_demo.py`
+- `scripts/__init__.py`
+- `scripts/seed_demo.py`
+- `README.md`
+- `docs/TESTING_MVP.md`
+- `docs/DEVLOG.md`
+- `templates/placeholder.html` (eliminado por no tener referencias)
+
+### Pruebas de integración
+
+Las pruebas nuevas no repiten cada test unitario existente. Conectan Catálogo, autenticación, permisos, Caja, POS, Venta, DetalleVenta, Inventario, MovimientoInventario, Historial, Dashboard y Estadísticas mediante una base temporal real.
+
+La matriz de acceso verifica que el visitante solo accede a rutas públicas, VENDEDOR utiliza los módulos operativos permitidos y ADMIN accede también a Productos, Categorías, movimientos y Estadísticas.
+
+Una operación completa de Comercio A se compara contra un snapshot de Comercio B para confirmar que B conserva stock, Caja y Ventas, mantiene métricas en cero y no recibe datos de A en su Catálogo.
+
+### Flujo end-to-end
+
+El escenario principal comienza con un producto público y stock superior al mínimo. Un visitante ve `Disponible`, el precio publicado y otro producto con `Precio no publicado`. VENDEDOR inicia sesión, abre Caja, agrega el producto al POS y confirma una Venta en efectivo.
+
+La prueba verifica cabecera de Venta, DetalleVenta, usuario, Caja, medio de pago, dinero recibido, vuelto, descuento de Inventario y Movimiento `VENTA`. Luego comprueba Historial, resumen de Caja, Dashboard de VENDEDOR, Dashboard ADMIN, Estadísticas, ranking, unidades y ganancia estimada.
+
+Después de la Venta, una nueva consulta de Catálogo deriva `Pocas unidades` desde el Inventario actual. Finalmente ADMIN cierra la Caja con efectivo contado igual al esperado y diferencia cero.
+
+### Casos negativos
+
+- Sin Caja abierta: la confirmación se rechaza, el carrito permanece y no se crean Venta, DetalleVenta o Movimiento ni se modifica stock.
+- Stock reducido después de agregar al carrito: la confirmación relee las existencias, evita la sobreventa, conserva el carrito y no deja escrituras parciales.
+- El rollback profundo ya estaba cubierto por `test_deep_database_failure_rolls_back_every_sale_change`, que fuerza un fallo intermedio con un trigger y verifica reversión de Venta, detalles, Inventario y movimientos. No se duplicó esa prueba correctamente focalizada.
+
+### Base limpia
+
+Una prueba parte de una ruta cuyo archivo no existe. `create_app()` crea la carpeta y la base, ejecuta `schema.sql`, genera exactamente las nueve tablas funcionales, mantiene `PRAGMA foreign_keys = ON` en la conexión y permite consultar `/health`.
+
+No fue necesario modificar el esquema ni agregar migraciones.
+
+### Datos demo
+
+`scripts/seed_demo.py` crea por defecto `database/stockflow_demo.db`, archivo ya cubierto por `.gitignore`. La herramienta es manual, no se ejecuta desde la aplicación y no toca `database/stockflow.db`.
+
+El seed genera un Comercio, ADMIN, VENDEDOR, dos Categorías, cuatro Productos e Inventarios con disponibilidad variada, precio publicado, precio oculto y producto oculto. La demo comienza sin Caja abierta para demostrar el flujo real.
+
+Las credenciales `admin@stockflow.demo` y `vendedor@stockflow.demo`, con contraseña `StockFlow123!`, están identificadas exclusivamente como demo/desarrollo local y se almacenan con hash. Una base existente no se sobrescribe salvo que el operador use `--reset` de forma explícita; también puede indicarse otra ruta con `--database`.
+
+### README
+
+README ahora diferencia alcance implementado y exclusiones, documenta roles, arquitectura, transacción de Venta, relación entre POS e Inventario, Catálogo derivado, estructura real, instalación para PowerShell/Linux/macOS, variables `STOCKFLOW_SECRET_KEY` y `STOCKFLOW_DATABASE`, creación automática del esquema, seed demo, credenciales, ejecución, URLs, `/health`, tests y ramas.
+
+El documento presenta StockFlow como MVP/demo académico funcional y no como software listo para producción.
+
+### Incidencias reales
+
+No se detectaron incidencias funcionales nuevas durante este bloque.
+
+Durante la construcción de pruebas se corrigieron dos supuestos del propio test: VENDEDOR no accede al historial administrativo de movimientos y las conexiones SQLite deben cerrarse explícitamente antes de reemplazar un archivo en Windows. No se modificó código funcional por estos ajustes.
+
+### Decisiones técnicas
+
+- #16 agrega evidencia de integración, no un módulo nuevo, porque todas las capacidades de negocio del MVP ya estaban implementadas.
+- Una prueba unitaria aísla una regla; una prueba de integración conecta componentes reales; el escenario end-to-end atraviesa HTTP, sesión, base y módulos consumidores.
+- La atomicidad se demuestra con la prueba existente de fallo profundo y con nuevos negativos que verifican ausencia de persistencia parcial.
+- El aislamiento se verifica con dos comercios y snapshots de stock, Caja y Ventas, además de consultas separadas de Dashboard, Estadísticas y Catálogo.
+- El efecto Venta → Catálogo se comprueba recargando la ruta pública después del descuento real de Inventario; no se almacena disponibilidad.
+- El seed es manual porque una base normal no debe recibir usuarios, contraseñas conocidas o datos ficticios automáticamente.
+- La creación atómica en un archivo temporal evita dejar una base demo parcial. El reemplazo solo está habilitado mediante `--reset` explícito.
+- No se realizó ni se declara una validación visual humana. `TESTING_MVP.md` conserva una checklist desktop/mobile pendiente antes de promover `develop` a `main`.
+- Se eliminaron únicamente el template placeholder sin referencias; las menciones históricas del DEVLOG y los atributos HTML `placeholder` se conservaron.
+- La rama prepara evidencia para review y PR hacia `develop`; no autoriza ni realiza una promoción directa a `main`.
+
+### Pruebas realizadas
+
+Se ejecutó la suite completa con:
+
+```text
+.venv\Scripts\python.exe -m pytest -q
+```
+
+Resultado: `282 passed`.
+
+Se agregaron siete pruebas: cinco escenarios en `test_mvp_integration.py` y dos del seed en `test_seed_demo.py`. Las 275 pruebas recibidas continúan pasando.
+
+También se ejecutó:
+
+```text
+.venv\Scripts\python.exe -m compileall -q app.py database routes services scripts tests utils
+git diff --check
+git grep -n -E "TODO|FIXME|NotImplemented|placeholder"
+```
+
+La auditoría no encontró stubs activos. Las coincidencias restantes son texto histórico, atributos de formularios o variables auxiliares de pruebas.
+
+### Resultado
+
+El MVP quedó integrado y respaldado por evidencia automatizada de flujo completo, permisos, errores seguros, rollback, aislamiento, base limpia y datos demo reproducibles. No fue necesario corregir código funcional ni modificar el esquema.
+
+### Pendiente
+
+Quedan pendientes la review de `test/integracion-mvp`, el Pull Request hacia `develop` y la validación visual humana registrada en `docs/TESTING_MVP.md`. Después de esas instancias corresponderá revisar un PR separado `develop → main`.
+
+El Issue #16 permanece abierto. No se hizo push, merge ni Pull Request desde esta rama.
