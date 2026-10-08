@@ -28,7 +28,7 @@ def load_logged_in_user() -> None:
 
     g.user = get_db().execute(
         """
-        SELECT id_usuario, nombre, apellido, email, rol, activo
+        SELECT id_usuario, id_comercio, nombre, apellido, email, rol, activo
         FROM usuario
         WHERE id_usuario = ?
         """,
