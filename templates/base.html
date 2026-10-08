@@ -3,34 +3,76 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#061829">
   <title>{% block title %}StockFlow{% endblock %}</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/stockflow.css') }}">
 </head>
-<body>
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container d-flex justify-content-between">
-      <a class="navbar-brand" href="{{ url_for('catalogo.index') }}">StockFlow</a>
-      {% if g.user %}
-        <form action="{{ url_for('auth.logout') }}" method="post">
-          <button class="btn btn-outline-light btn-sm" type="submit">Cerrar sesión</button>
-        </form>
-      {% else %}
-        <a class="btn btn-outline-light btn-sm" href="{{ url_for('auth.login') }}">Iniciar sesión</a>
-      {% endif %}
-    </div>
-  </nav>
-  <main class="container py-5">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% for category, message in messages %}
-        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-          {{ message }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+{% set show_internal_shell = g.user and request.blueprint != "catalogo" %}
+<body class="{{ 'sf-authenticated' if show_internal_shell else 'sf-public' }}">
+  <a class="sf-skip-link" href="#main-content">Saltar al contenido</a>
+
+  {% if show_internal_shell %}
+    <div class="sf-app-shell">
+      <aside class="sf-sidebar sf-sidebar-desktop d-none d-lg-flex" aria-label="Navegación interna">
+        {% include "partials/internal_sidebar.html" %}
+      </aside>
+
+      <div class="offcanvas offcanvas-start sf-offcanvas d-lg-none" tabindex="-1" id="sfMobileNavigation" aria-labelledby="sfMobileNavigationLabel">
+        <div class="offcanvas-header">
+          <span class="visually-hidden" id="sfMobileNavigationLabel">Navegación de StockFlow</span>
+          <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="offcanvas" aria-label="Cerrar navegación"></button>
         </div>
-      {% endfor %}
-    {% endwith %}
-    {% block content %}{% endblock %}
-  </main>
+        <div class="offcanvas-body p-0">
+          {% include "partials/internal_sidebar.html" %}
+        </div>
+      </div>
+
+      <div class="sf-app-main">
+        <header class="sf-mobile-topbar d-lg-none">
+          <button class="sf-menu-button" type="button" data-bs-toggle="offcanvas" data-bs-target="#sfMobileNavigation" aria-controls="sfMobileNavigation" aria-label="Abrir navegación">
+            <span></span><span></span><span></span>
+          </button>
+          <a class="sf-mobile-brand" href="{{ url_for('dashboard.index') }}">
+            <span class="sf-monogram sf-monogram-sm" aria-hidden="true">SF</span>
+            <span>StockFlow</span>
+          </a>
+          <span class="sf-mobile-role">{{ g.user["rol"] }}</span>
+        </header>
+
+        <main class="sf-content" id="main-content" tabindex="-1">
+          <div class="container-fluid sf-content-container">
+  {% else %}
+    <header class="sf-public-header">
+      <nav class="container sf-public-nav" aria-label="Navegación pública">
+        <a class="sf-brand" href="{{ url_for('catalogo.index') }}">
+          <span class="sf-monogram" aria-hidden="true">SF</span>
+          <span class="sf-brand-copy"><strong>StockFlow</strong><small>Gestión simple, control real</small></span>
+        </a>
+        <div class="sf-public-actions">
+          <a class="sf-public-link {{ 'active' if request.blueprint == 'catalogo' else '' }}" href="{{ url_for('catalogo.index') }}" {% if request.blueprint == "catalogo" %}aria-current="page"{% endif %}>Catálogo</a>
+          {% if g.user %}
+            <a class="btn btn-sm btn-success" href="{{ url_for('dashboard.index') }}">Volver al panel</a>
+          {% else %}
+            <a class="btn btn-sm btn-outline-light" href="{{ url_for('auth.login') }}">Iniciar sesión</a>
+          {% endif %}
+        </div>
+      </nav>
+    </header>
+    <main class="sf-public-main" id="main-content" tabindex="-1">
+      <div class="container">
+  {% endif %}
+
+        {% include "partials/flash_messages.html" %}
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+  {% if show_internal_shell %}
+      </div>
+    </div>
+  {% endif %}
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="{{ url_for('static', filename='js/app.js') }}"></script>
