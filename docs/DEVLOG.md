@@ -701,3 +701,104 @@ El Issue #14 quedó implementado y probado: Dashboard reutiliza información ope
 ### Pendiente
 
 Pull Request #27 mergeado a `develop` mediante el merge commit `df1a9e3`. El Issue #14 fue cerrado como completado y no queda trabajo pendiente para este Issue.
+
+## 2026-10-08 — Issue #15: Implementar Catálogo público
+
+### Rama
+
+`feature/catalogo-publico`
+
+### Objetivo
+
+Implementar el catálogo informativo y público de StockFlow para que cualquier visitante pueda seleccionar un comercio activo y consultar sus productos publicados, sin iniciar sesión y sin incorporar compra, reserva, carrito o búsqueda global entre comercios.
+
+### Cambios realizados
+
+- Se reemplazó el placeholder de Catálogo por una entrada pública que lista únicamente comercios activos.
+- Se agregó el catálogo específico `GET /catalogo/<commerce_id>` como fuente explícita de los productos de una tienda.
+- Se incorporaron búsqueda parcial por nombre y filtro por categorías activas que tienen publicaciones vigentes.
+- Se muestran nombre, categoría, descripción e imagen opcional mediante una proyección pública acotada.
+- Se incorporaron los estados derivados `Disponible`, `Pocas unidades` y `Agotado` sin exponer cantidades.
+- Se aplicaron de forma conjunta los filtros de comercio, producto activo, visibilidad pública, categoría activa e Inventario existente.
+- Se implementó la publicación condicional de `precio_venta`: se muestra el precio actual cuando está habilitado y `Precio no publicado` cuando está oculto.
+- Se centralizó la regla de disponibilidad en el servicio de Inventario para que Inventario y Catálogo compartan exactamente el mismo cálculo.
+- Se eliminó el stub histórico `NotImplemented` de Inventario, reemplazado por el helper compartido, sin alterar movimientos de stock.
+- Se agregaron estados claros para comercio sin publicaciones, búsqueda sin coincidencias y categoría inválida o ajena.
+- Se cubrió funcionalmente el alcance del Issue #17 sin crear columnas ni una segunda implementación del precio.
+
+### Archivos creados o modificados
+
+- `services/catalogo_service.py`
+- `services/inventario_service.py`
+- `routes/catalogo.py`
+- `routes/inventario.py`
+- `templates/catalogo/comercios.html`
+- `templates/catalogo/index.html`
+- `tests/test_catalog.py`
+- `docs/DEVLOG.md`
+
+### Funciones o componentes importantes
+
+- `get_public_commerces()`: devuelve los datos básicos permitidos de los comercios activos.
+- `get_public_commerce()`: valida que la tienda solicitada exista y esté activa.
+- `get_public_categories()`: obtiene categorías activas con productos públicos e Inventario dentro del comercio seleccionado.
+- `get_public_catalog()`: aplica los filtros públicos y devuelve solo nombre, descripción, imagen, categoría, precio permitido y disponibilidad derivada.
+- `get_availability_status()`: centraliza en Inventario la regla compartida para los tres estados de disponibilidad.
+- `catalogo.index()`: presenta la selección explícita de comercios activos.
+- `catalogo.commerce_catalog()`: resuelve tienda, búsqueda, categoría y proyección pública sin modificar la base.
+
+### Decisiones técnicas
+
+- Catálogo no tiene tabla propia porque Producto, Inventario, Categoría y Comercio ya son las fuentes vigentes. Duplicar esos datos introduciría sincronización innecesaria e inconsistencias.
+- Producto conserva nombre, descripción, imagen, estado, banderas y `precio_venta`; Inventario conserva `stock_actual` y `stock_minimo`. Catálogo únicamente consulta y proyecta.
+- El comercio se identifica explícitamente con `commerce_id` en la URL. `/catalogo` solo permite elegir una tienda activa y no implementa HU18 ni búsqueda de productos entre comercios.
+- Un producto se publica únicamente si pertenece al comercio solicitado, está activo, tiene `visible_catalogo = 1`, pertenece a una categoría activa y posee Inventario. El `INNER JOIN` evita publicar productos con información operativa incompleta.
+- Las categorías desactivadas ocultan de forma derivada sus productos sin cambiar ni eliminar el Producto. Las opciones del filtro se limitan a categorías activas con publicaciones vigentes.
+- Una categoría inválida o de otro comercio se ignora de manera segura y se informa al visitante; nunca se usa para revelar información ajena.
+- La disponibilidad no se persiste. Cada request aplica la regla compartida sobre el Inventario actual: cero es `Agotado`, un valor positivo menor o igual al mínimo es `Pocas unidades` y un valor mayor al mínimo es `Disponible`.
+- El template nunca recibe cantidades exactas. El servicio usa stock y mínimo solo para derivar el estado y construye un diccionario público sin IDs de Producto, Inventario, usuario, Caja o Venta.
+- `mostrar_precio_catalogo` controla únicamente la proyección. Si está deshabilitado, el servicio entrega `price = None`; por eso el precio oculto no queda presente en HTML, atributos o JSON.
+- No existe un segundo precio: el único importe público posible es el `Producto.precio_venta` actual. Las cuatro combinaciones de `visible_catalogo` y `mostrar_precio_catalogo` respetan la precedencia de la visibilidad.
+- Catálogo representa información vigente, por lo que un cambio en `precio_venta` se refleja en la siguiente consulta. En cambio, `DetalleVenta` conserva el precio histórico de una operación confirmada.
+- Todas las consultas se aíslan por comercio. Los productos, categorías, precios, costos y existencias de otra tienda no integran la proyección solicitada.
+- El acceso es anónimo y de solo lectura. Los endpoints públicos no ejecutan `INSERT`, `UPDATE`, `DELETE` ni `commit`.
+- Un comercio activo sin publicaciones muestra un estado vacío específico; una búsqueda o filtro sin coincidencias muestra un estado de resultados distinto.
+- La superposición con el Issue #17 se resolvió reutilizando las banderas ya administradas por Productos y la única fuente de precio existente. El Issue queda funcionalmente cubierto, pero permanece abierto hasta su revisión administrativa.
+
+Trazabilidad del Catálogo:
+
+`RF15-RF17 · HU15-HU17 · PB21-PB24 · PB31`
+
+Trazabilidad específica de publicación de precio del Issue #17:
+
+`RF05 · RF17 · HU05 · HU17 · PB31`
+
+### Pruebas realizadas
+
+Se ejecutó la suite completa con:
+
+```text
+.venv\Scripts\python.exe -m pytest -q
+```
+
+Resultado: `274 passed`.
+
+Las 26 pruebas nuevas cubren acceso público sin sesión, selector de comercios activos, comercios inexistentes o inactivos, proyección permitida, valores centinela de costo y stock, las cuatro combinaciones de publicación del Issue #17, precio oculto, producto oculto, producto y categoría inactivos, desactivación de categoría, ausencia de Inventario, los tres estados derivados, cambios sucesivos de stock, precio actual, búsqueda parcial, filtro válido, categoría inválida o ajena, aislamiento entre dos comercios, comercio vacío, claves exactas de la proyección, integración con una Venta confirmada y garantía de solo lectura.
+
+Los 248 tests anteriores continúan pasando. Se ejecutó además `.venv\Scripts\python.exe -m compileall -q app.py database routes services tests utils`, sin errores.
+
+### Problemas encontrados
+
+La rama local `develop` estaba detrás del merge y cierre documental del Issue #14. Se sincronizó mediante `git fetch origin` y `git pull --ff-only origin develop` hasta el commit exacto `35850a2223f093ad4b3620f1471026eebc9921b6` antes de crear `feature/catalogo-publico`.
+
+En el primer pase de la suite nueva, una búsqueda de prueba usaba el término `oculto`, que también coincidía correctamente con un producto público llamado `Producto precio oculto`. Se cambió el dato de prueba por un término exclusivo del producto oculto; no existía un fallo funcional en la consulta.
+
+### Resultado
+
+El Issue #15 quedó implementado y probado: el visitante puede seleccionar una tienda activa, buscar y filtrar publicaciones vigentes, consultar disponibilidad sin conocer cantidades y ver el precio actual únicamente cuando el comercio decidió publicarlo. Inventario, Productos y Punto de Venta siguen siendo las fuentes únicas de los datos y cualquier cambio se refleja en la siguiente consulta pública.
+
+El Issue #17 quedó cubierto funcionalmente por la misma implementación y por pruebas explícitas de sus cuatro combinaciones, sin agregar esquema ni precio alternativo.
+
+### Pendiente
+
+Quedan pendientes la revisión, el push de `feature/catalogo-publico` y la apertura del Pull Request. Los Issues #15 y #17 permanecen abiertos hasta completar su revisión; no se avanzó con el Issue #16.
