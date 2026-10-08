@@ -3,52 +3,52 @@
 {% block title %}Dashboard | StockFlow{% endblock %}
 
 {% block content %}
-  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+  <div class="sf-page-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
-      <p class="text-uppercase text-secondary small fw-semibold mb-1">Resumen operativo</p>
+      <p class="sf-kicker text-uppercase mb-1">Resumen operativo</p>
       <h1 class="h2 mb-1">Hola, {{ g.user.nombre }}</h1>
       <p class="text-secondary mb-0">Información actual de tu comercio.</p>
     </div>
     {% if open_cash_register %}
-      <span class="badge text-bg-success fs-6">Caja #{{ open_cash_register.id_caja }} abierta</span>
+      <span class="sf-status-pill is-open">Caja #{{ open_cash_register.id_caja }} abierta</span>
     {% else %}
-      <span class="badge text-bg-secondary fs-6">Sin caja abierta</span>
+      <span class="sf-status-pill">Sin caja abierta</span>
     {% endif %}
   </div>
 
   {% if g.user.rol == "ADMIN" %}
     <section class="row g-3 mb-4" aria-label="Resumen de ventas de hoy">
       <div class="col-md-4">
-        <div class="card border-0 shadow-sm h-100"><div class="card-body">
-          <div class="text-secondary small">Total vendido hoy</div>
-          <div class="fs-3 fw-semibold">$ {{ "%.2f"|format(admin_summary.total_sold) }}</div>
+        <div class="card sf-kpi-card h-100"><div class="card-body">
+          <div class="sf-kpi-label">Total vendido hoy</div>
+          <div class="sf-kpi-value">$ {{ "%.2f"|format(admin_summary.total_sold) }}</div>
         </div></div>
       </div>
       <div class="col-md-4">
-        <div class="card border-0 shadow-sm h-100"><div class="card-body">
-          <div class="text-secondary small">Ventas de hoy</div>
-          <div class="fs-3 fw-semibold">{{ admin_summary.sale_count }}</div>
+        <div class="card sf-kpi-card h-100"><div class="card-body">
+          <div class="sf-kpi-label">Ventas de hoy</div>
+          <div class="sf-kpi-value">{{ admin_summary.sale_count }}</div>
         </div></div>
       </div>
       <div class="col-md-4">
-        <div class="card border-0 shadow-sm h-100"><div class="card-body">
-          <div class="text-secondary small">Ticket promedio hoy</div>
-          <div class="fs-3 fw-semibold">$ {{ "%.2f"|format(admin_summary.average_ticket) }}</div>
+        <div class="card sf-kpi-card h-100"><div class="card-body">
+          <div class="sf-kpi-label">Ticket promedio hoy</div>
+          <div class="sf-kpi-value">$ {{ "%.2f"|format(admin_summary.average_ticket) }}</div>
         </div></div>
       </div>
     </section>
   {% elif open_cash_register %}
     <section class="row g-3 mb-4" aria-label="Resumen de la caja actual">
       <div class="col-md-6">
-        <div class="card border-0 shadow-sm h-100"><div class="card-body">
-          <div class="text-secondary small">Ventas de la caja actual</div>
-          <div class="fs-3 fw-semibold">{{ cash_register_summary.sale_count }}</div>
+        <div class="card sf-kpi-card h-100"><div class="card-body">
+          <div class="sf-kpi-label">Ventas de la caja actual</div>
+          <div class="sf-kpi-value">{{ cash_register_summary.sale_count }}</div>
         </div></div>
       </div>
       <div class="col-md-6">
-        <div class="card border-0 shadow-sm h-100"><div class="card-body">
-          <div class="text-secondary small">Total de la caja actual</div>
-          <div class="fs-3 fw-semibold">$ {{ "%.2f"|format(cash_register_summary.total_sold) }}</div>
+        <div class="card sf-kpi-card h-100"><div class="card-body">
+          <div class="sf-kpi-label">Total de la caja actual</div>
+          <div class="sf-kpi-value">$ {{ "%.2f"|format(cash_register_summary.total_sold) }}</div>
         </div></div>
       </div>
     </section>
@@ -58,7 +58,7 @@
 
   <div class="row g-4 mb-4">
     <div class="col-lg-7">
-      <section class="card border-0 shadow-sm h-100">
+      <section class="card h-100">
         <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
           <h2 class="h5 mb-0">Stock bajo actual</h2>
           <span class="badge text-bg-danger">{{ low_stock_count }}</span>
@@ -70,18 +70,18 @@
               <span class="text-secondary">{{ product.current_stock }} / mínimo {{ product.minimum_stock }}</span>
             </div>
           {% else %}
-            <div class="list-group-item text-secondary">No hay productos con stock bajo.</div>
+            <div class="list-group-item sf-empty-state">No hay productos con stock bajo.</div>
           {% endfor %}
         </div>
       </section>
     </div>
     <div class="col-lg-5">
-      <section class="card border-0 shadow-sm h-100">
+      <section class="card h-100">
         <div class="card-body">
           <h2 class="h5">Estado de Caja</h2>
           {% if open_cash_register %}
             <p class="mb-1"><strong>ABIERTA</strong> · Caja #{{ open_cash_register.id_caja }}</p>
-            <p class="text-secondary small">Desde {{ open_cash_register.fecha_apertura }}</p>
+            <p class="text-secondary small">Desde {{ open_cash_register.fecha_apertura | local_datetime }}</p>
           {% else %}
             <p class="text-secondary">No hay una Caja abierta en este momento.</p>
           {% endif %}
@@ -91,10 +91,10 @@
     </div>
   </div>
 
-  <section class="card border-0 shadow-sm">
+  <section class="card">
     <div class="card-body">
       <h2 class="h5 mb-3">Accesos rápidos</h2>
-      <div class="d-flex flex-wrap gap-2">
+      <div class="sf-quick-actions">
         <a class="btn btn-success" href="{{ url_for('ventas.punto_venta') }}">Punto de Venta</a>
         <a class="btn btn-outline-dark" href="{{ url_for('caja.index') }}">Caja</a>
         <a class="btn btn-outline-dark" href="{{ url_for('inventario.index') }}">Inventario</a>

@@ -840,6 +840,8 @@ Validar como conjunto el MVP ya implementado, agregar evidencia cross-module de 
 - Se creó `docs/TESTING_MVP.md` con alcance automatizado, rollback, aislamiento, checklist visual e incidencias.
 - Se auditó deuda y rutas. El template placeholder no tenía referencias activas y fue eliminado.
 - Durante la review se corrigió la clasificación diaria de Ventas para convertir el timestamp UTC persistido a fecha local antes de filtrar o agrupar Estadísticas.
+- Después del merge del PR #31, la validación humana detectó INC-02: el shell visual y la navegación no representaban la interfaz definida para Etapa 12. La corrección se trabajó en `fix/ui-etapa12` desde `develop` en `665c8e147305cc0dcd1b41563a4bafdaf0a3c743`.
+- La segunda revisión visual desktop aprobó en general el shell y señaló tres ajustes de polish: centrar Login, ampliar inputs numéricos comprimidos y convertir a hora local los timestamps UTC mostrados al usuario.
 
 ### Archivos creados o modificados
 
@@ -903,6 +905,34 @@ La resolución aplica `DATE(v.fecha_hora, 'localtime')` de forma consistente al 
 
 Durante la construcción de pruebas se corrigieron dos supuestos del propio test: VENDEDOR no accede al historial administrativo de movimientos y las conexiones SQLite deben cerrarse explícitamente antes de reemplazar un archivo en Windows. No se modificó código funcional por estos ajustes.
 
+#### INC-02 — Shell visual y navegación de Etapa 12
+
+La validación humana posterior al PR #31 encontró que la interfaz conservaba una barra superior mínima y estilos Bootstrap claros. Faltaban navegación interna persistente, jerarquía visual, estado de sección activa y una presentación coherente entre desktop y mobile. El problema era de interfaz; no afectaba persistencia, cálculos ni permisos de backend.
+
+La resolución incorporó un shell autenticado compartido con sidebar fijo en desktop y offcanvas Bootstrap en mobile, navegación filtrada por rol, identificación accesible de la sección actual, usuario, rol y cierre de sesión. Catálogo y Login conservan un header público sin navegación interna. La paleta naval/mint, formularios, tablas, tarjetas, estados, POS, Caja, gráficos y vistas secundarias quedaron centralizados en `static/css/stockflow.css`; Chart.js solo recibió opciones de presentación.
+
+Se agregaron seis pruebas en `tests/test_ui_navigation.py` para la estructura ADMIN/VENDEDOR, persistencia del menú, separación pública y `aria-current="page"`. No se modificaron rutas, servicios, consultas SQL, esquema, sesiones ni reglas de autorización.
+
+#### INC-03 — Timestamps UTC mostrados en interfaz
+
+La segunda revisión desktop observó que Caja mostraba directamente `fecha_apertura` almacenada por SQLite en UTC. La auditoría encontró el mismo patrón en Dashboard, último cierre de Caja, Historial y detalle de Ventas, y Movimientos de Inventario. No se exponía `ultima_actualizacion`.
+
+Se agregó `utils/datetime_utils.py` con `format_local_datetime()`, registrado como filtro Jinja `local_datetime`. Los strings SQLite sin zona se interpretan como UTC y se convierten mediante `astimezone()` a la zona local del equipo, sin hardcodear país u offset; se presentan como `dd/mm/aaaa hh:mm`. `None` y vacío se muestran vacíos, y un valor no interpretable conserva su representación original para evitar un 500 sin ocultar el dato problemático.
+
+La persistencia continúa usando UTC y no se modificaron schema, datos, transacciones ni consultas de negocio. La corrección SQL `DATE(v.fecha_hora, 'localtime')` de Estadísticas permanece intacta porque resuelve clasificación diaria, mientras el filtro nuevo resuelve únicamente presentación textual.
+
+En el mismo polish se centró el panel de Login con grid y ancho controlado, se agregó ancho estable al stock mínimo de Inventario y se reforzó `.sf-quantity-input` en búsqueda y carrito del POS. Siete pruebas nuevas cubren utilidad, fallbacks, páginas afectadas y clases estructurales.
+
+#### Cierre de validación visual humana
+
+Axel completó y aprobó la validación visual humana después del polish final. En desktop verificó Catálogo público, Login, Dashboard ADMIN, POS, Caja cerrada y abierta, Inventario, Productos, Ventas y Estadísticas, junto con navegación persistente, módulo activo, timestamps locales e inputs numéricos legibles.
+
+En viewport mobile `390×844` verificó Dashboard, menú hamburguesa y offcanvas completo, navegación ADMIN, POS, Caja, Inventario, Productos, Ventas, Estadísticas, Catálogo público y Login. No se detectó overflow horizontal global: el sidebar se reemplaza por el offcanvas; cards, KPIs, formularios, POS y bloques de Estadísticas se apilan; y el Catálogo pasa de grid desktop a una columna.
+
+Las tablas de Inventario, Productos, Ventas y productos del POS mantienen su estructura tabular con scroll horizontal contenido por `table-responsive`. Se acepta como decisión responsive deliberada para preservar legibilidad y no como incidencia, porque no provoca overflow global de la página.
+
+INC-02 e INC-03 quedan resueltas. La revisión humana no encontró nuevos bloqueantes después del polish.
+
 ### Decisiones técnicas
 
 - #16 agrega evidencia de integración, no un módulo nuevo, porque todas las capacidades de negocio del MVP ya estaban implementadas.
@@ -910,10 +940,10 @@ Durante la construcción de pruebas se corrigieron dos supuestos del propio test
 - La atomicidad se demuestra con la prueba existente de fallo profundo y con nuevos negativos que verifican ausencia de persistencia parcial.
 - El aislamiento se verifica con dos comercios y snapshots de stock, Caja y Ventas, además de consultas separadas de Dashboard, Estadísticas y Catálogo.
 - El efecto Venta → Catálogo se comprueba recargando la ruta pública después del descuento real de Inventario; no se almacena disponibilidad.
-- Los timestamps de Venta permanecen almacenados en UTC. Solo las consultas por día calendario aplican `localtime`, alineándose con `date.today()` usado por Dashboard y la resolución de períodos.
+- Los timestamps permanecen almacenados en UTC. Las consultas por día calendario aplican `localtime` para clasificar y el filtro Jinja `local_datetime` convierte por separado solo la representación visible.
 - El seed es manual porque una base normal no debe recibir usuarios, contraseñas conocidas o datos ficticios automáticamente.
 - La creación atómica en un archivo temporal evita dejar una base demo parcial. El reemplazo solo está habilitado mediante `--reset` explícito.
-- No se realizó ni se declara una validación visual humana. `TESTING_MVP.md` conserva una checklist desktop/mobile pendiente antes de promover `develop` a `main`.
+- La validación visual humana desktop y mobile `390×844` quedó completada después del polish. Las tablas operativas conservan scroll horizontal contenido en mobile para mantener su legibilidad sin generar overflow global.
 - Se eliminaron únicamente el template placeholder sin referencias; las menciones históricas del DEVLOG y los atributos HTML `placeholder` se conservaron.
 - La rama prepara evidencia para review y PR hacia `develop`; no autoriza ni realiza una promoción directa a `main`.
 
@@ -925,9 +955,9 @@ Se ejecutó la suite completa con:
 .venv\Scripts\python.exe -m pytest -q
 ```
 
-Resultado: `283 passed`.
+Resultado actualizado después del polish desktop e INC-03: `296 passed`.
 
-Se agregaron ocho pruebas: seis escenarios en `test_mvp_integration.py` y dos del seed en `test_seed_demo.py`. Las 275 pruebas recibidas continúan pasando.
+Se agregaron ocho pruebas en la integración original —seis escenarios en `test_mvp_integration.py` y dos del seed—, seis regresiones estructurales de navegación y siete pruebas de presentación temporal/polish. Las 289 pruebas previas a esta segunda revisión continúan pasando.
 
 También se ejecutó:
 
@@ -941,10 +971,15 @@ La auditoría no encontró stubs activos. Las coincidencias restantes son texto 
 
 ### Resultado
 
-El MVP quedó integrado y respaldado por evidencia automatizada de flujo completo, permisos, errores seguros, rollback, aislamiento, base limpia y datos demo reproducibles. La incidencia de clasificación temporal quedó corregida en consultas y cubierta por regresión, sin modificar el esquema ni los datos persistidos.
+El MVP quedó integrado y respaldado por evidencia automatizada de flujo completo, permisos, errores seguros, rollback, aislamiento, base limpia y datos demo reproducibles. La validación visual humana desktop/mobile quedó aprobada; las incidencias temporales y visuales están resueltas y cubiertas por regresión, sin modificar esquema, datos persistidos ni reglas de negocio.
 
 ### Pendiente
 
-Quedan pendientes la review de `test/integracion-mvp`, el Pull Request hacia `develop` y la validación visual humana registrada en `docs/TESTING_MVP.md`. Después de esas instancias corresponderá revisar un PR separado `develop → main`.
+El Pull Request #31 de `test/integracion-mvp` fue mergeado a `develop` en `665c8e1`. La validación visual humana quedó completada. Solo resta:
 
-El Issue #16 permanece abierto. La rama continúa en review; no se hizo merge ni Pull Request.
+- abrir el Pull Request `fix/ui-etapa12 → develop`;
+- hacer el merge después de la review;
+- cerrar el Issue #16;
+- posteriormente revisar la promoción `develop → main`.
+
+El Issue #16 permanece abierto. No se hizo merge ni Pull Request de la corrección visual y no se promovió `develop` a `main`.

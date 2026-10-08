@@ -5,6 +5,7 @@ from flask import Flask, jsonify, redirect, url_for
 
 from database.db import close_db, init_db
 from routes import register_blueprints
+from utils.datetime_utils import format_local_datetime
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -21,6 +22,7 @@ def create_app(test_config=None) -> Flask:
     if test_config:
         app.config.update(test_config)
 
+    app.jinja_env.filters["local_datetime"] = format_local_datetime
     app.teardown_appcontext(close_db)
 
     with app.app_context():

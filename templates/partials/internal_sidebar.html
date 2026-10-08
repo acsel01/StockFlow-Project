@@ -1,0 +1,63 @@
+{% set current_endpoint = request.endpoint or "" %}
+{% set dashboard_active = current_endpoint == "dashboard.index" %}
+{% set pos_active = current_endpoint == "ventas.punto_venta" %}
+{% set cash_active = request.blueprint == "caja" %}
+{% set inventory_active = request.blueprint == "inventario" %}
+{% set products_active = request.blueprint == "productos" %}
+{% set sales_active = request.blueprint == "ventas" and not pos_active %}
+{% set statistics_active = request.blueprint == "estadisticas" %}
+
+<div class="sf-sidebar-inner" data-testid="internal-sidebar">
+  <a class="sf-brand sf-sidebar-brand" href="{{ url_for('dashboard.index') }}">
+    <span class="sf-monogram" aria-hidden="true">SF</span>
+    <span class="sf-brand-copy"><strong>StockFlow</strong><small>Control operativo</small></span>
+  </a>
+
+  <div class="sf-nav-label">Navegación</div>
+  <nav class="sf-sidebar-nav" aria-label="Secciones principales">
+    <a class="sf-nav-link {{ 'active' if dashboard_active else '' }}" data-section="dashboard" href="{{ url_for('dashboard.index') }}" {% if dashboard_active %}aria-current="page"{% endif %}>
+      <span class="sf-nav-indicator" aria-hidden="true"></span>Dashboard
+    </a>
+    <a class="sf-nav-link {{ 'active' if pos_active else '' }}" data-section="pos" href="{{ url_for('ventas.punto_venta') }}" {% if pos_active %}aria-current="page"{% endif %}>
+      <span class="sf-nav-indicator" aria-hidden="true"></span>Punto de venta
+    </a>
+    <a class="sf-nav-link {{ 'active' if cash_active else '' }}" data-section="cash" href="{{ url_for('caja.index') }}" {% if cash_active %}aria-current="page"{% endif %}>
+      <span class="sf-nav-indicator" aria-hidden="true"></span>Caja
+    </a>
+    <a class="sf-nav-link {{ 'active' if inventory_active else '' }}" data-section="inventory" href="{{ url_for('inventario.index') }}" {% if inventory_active %}aria-current="page"{% endif %}>
+      <span class="sf-nav-indicator" aria-hidden="true"></span>Inventario
+    </a>
+    {% if g.user["rol"] == "ADMIN" and inventory_active %}
+      <a class="sf-nav-sublink" href="{{ url_for('inventario.movements') }}">Movimientos</a>
+    {% endif %}
+    {% if g.user["rol"] == "ADMIN" %}
+      <a class="sf-nav-link {{ 'active' if products_active else '' }}" data-section="products" href="{{ url_for('productos.index') }}" {% if products_active %}aria-current="page"{% endif %}>
+        <span class="sf-nav-indicator" aria-hidden="true"></span>Productos
+      </a>
+      {% if products_active %}
+        <a class="sf-nav-sublink" href="{{ url_for('productos.categories') }}">Categorías</a>
+      {% endif %}
+    {% endif %}
+    <a class="sf-nav-link {{ 'active' if sales_active else '' }}" data-section="sales" href="{{ url_for('ventas.historial') }}" {% if sales_active %}aria-current="page"{% endif %}>
+      <span class="sf-nav-indicator" aria-hidden="true"></span>Ventas
+    </a>
+    {% if g.user["rol"] == "ADMIN" %}
+      <a class="sf-nav-link {{ 'active' if statistics_active else '' }}" data-section="statistics" href="{{ url_for('estadisticas.index') }}" {% if statistics_active %}aria-current="page"{% endif %}>
+        <span class="sf-nav-indicator" aria-hidden="true"></span>Estadísticas
+      </a>
+    {% endif %}
+  </nav>
+
+  <div class="sf-sidebar-footer">
+    <div class="sf-user-card">
+      <span class="sf-user-avatar" aria-hidden="true">{{ g.user["nombre"][0]|upper }}</span>
+      <span class="sf-user-copy">
+        <strong>{{ g.user["nombre"] }} {{ g.user["apellido"] or "" }}</strong>
+        <small>{{ g.user["rol"] }}</small>
+      </span>
+    </div>
+    <form action="{{ url_for('auth.logout') }}" method="post">
+      <button class="btn btn-outline-light btn-sm w-100" type="submit">Cerrar sesión</button>
+    </form>
+  </div>
+</div>

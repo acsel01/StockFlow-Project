@@ -3,10 +3,10 @@
 ## Corte
 
 - Fecha: 2026-10-08
-- Rama: `test/integracion-mvp`
-- Base: `develop` en `87bd4cc7f601d64507efde2ef673fc469e635177`
-- Suite automatizada: `283 passed`
-- Pruebas agregadas en este bloque: 8
+- Rama de corrección actual: `fix/ui-etapa12`
+- Base: `develop` en `665c8e147305cc0dcd1b41563a4bafdaf0a3c743`
+- Suite automatizada: `296 passed`
+- Pruebas agregadas: 8 de integración, 6 estructurales de navegación y 7 de polish/presentación temporal
 - Trazabilidad principal: `PB28 · PB29 · PB30`
 
 ## Automatizado
@@ -37,6 +37,19 @@ git diff --check
 - Catálogo público y precio condicional;
 - aislamiento entre comercios;
 - seed demo manual y seguro.
+- shell interno responsive, navegación por rol y separación del layout público.
+
+### Navegación y shell visual
+
+`tests/test_ui_navigation.py` agrega seis casos estructurales para la corrección INC-02. Verifican que ADMIN reciba Dashboard, Punto de venta, Caja, Inventario, Productos, Ventas y Estadísticas; que la navegación persista en Caja y Productos; que VENDEDOR vea únicamente sus cinco secciones operativas; y que Catálogo y Login no expongan el sidebar interno. También comprueban que la sección actual se identifique con `aria-current="page"` y que exista el disparador del offcanvas móvil.
+
+Estas pruebas validan la estructura renderizada y los permisos ya existentes. No sustituyen la revisión humana de contraste, composición, scroll, densidad o ergonomía en viewports reales.
+
+### Segunda revisión visual desktop
+
+`tests/test_datetime_display.py` agrega siete casos para el polish posterior: conversión portable de timestamp SQLite UTC a la zona local del sistema, fallbacks seguros, soporte de valores `datetime`, render local en Dashboard, Caja, Ventas, detalle y Movimientos, y presencia de anchos específicos en los inputs numéricos de Inventario y POS.
+
+La persistencia continúa en UTC. El filtro Jinja `local_datetime` resuelve únicamente la representación textual `dd/mm/aaaa hh:mm`; la clasificación diaria de Estadísticas conserva de forma independiente `DATE(v.fecha_hora, 'localtime')`.
 
 ### Flujos críticos cross-module
 
@@ -103,27 +116,46 @@ El seed no se importa ni ejecuta desde `create_app()` y nunca crea usuarios auto
 
 ## Manual / visual
 
-No se realizó una validación visual humana completa en navegador para este corte. La evidencia automatizada valida rutas, permisos, contenido funcional y estructura Bootstrap, pero no sustituye una revisión visual desktop/mobile.
+La validación visual humana fue completada por Axel después del polish final. Desktop y mobile en viewport `390×844` quedaron aprobados; la evidencia automatizada complementa esta revisión y no la sustituye.
 
-Pendiente de validación visual humana antes de promover `develop` a `main`:
+Validación visual humana completada:
 
-- [ ] Catálogo desktop
-- [ ] Catálogo mobile
-- [ ] Dashboard ADMIN
-- [ ] Dashboard VENDEDOR
-- [ ] Productos
-- [ ] Inventario
-- [ ] POS
-- [ ] Caja
-- [ ] Ventas
-- [ ] Estadísticas
-- [ ] Mensajes de error
+- [x] Catálogo desktop
+- [x] Catálogo mobile
+- [x] Login desktop
+- [x] Login mobile
+- [x] Dashboard ADMIN
+- [x] Dashboard VENDEDOR
+- [x] Productos
+- [x] Formularios de Producto y Categorías
+- [x] Inventario
+- [x] Ajuste e historial de movimientos
+- [x] POS
+- [x] Caja
+- [x] Ventas
+- [x] Detalle de Venta
+- [x] Estadísticas
+- [x] Mensajes de error
+
+Validación humana completada en desktop y viewport mobile `390×844`.
+
+### Evidencia visual aprobada
+
+En desktop se verificaron Catálogo público, Login, Dashboard ADMIN, POS, Caja cerrada y abierta, Inventario, Productos, Ventas y Estadísticas. También se aprobaron la navegación persistente, la indicación del módulo activo, la presentación local de timestamps y la legibilidad de inputs numéricos.
+
+En mobile `390×844` se verificaron Dashboard, menú hamburguesa y offcanvas completo, navegación ADMIN, POS, Caja, Inventario, Productos, Ventas, Estadísticas, Catálogo público y Login.
+
+No se observó overflow horizontal global. El sidebar desktop se reemplaza por el offcanvas mobile; cards y KPIs se apilan; los formularios pasan a disposición vertical; la búsqueda, los productos y el carrito del POS se apilan; el grid desktop del Catálogo pasa a una columna; y Estadísticas apila KPIs, gráficos y rankings.
+
+Las tablas de Inventario, Productos, Ventas y productos del POS conservan deliberadamente su estructura tabular dentro de contenedores `table-responsive` con scroll horizontal contenido. Esta decisión preserva su legibilidad en mobile y no constituye una incidencia, ya que no genera overflow en la página.
 
 ## Incidencias
 
 | ID | Caso | Resultado | Incidencia | Resolución |
 | --- | --- | --- | --- | --- |
 | INC-01 | Venta cercana al cambio de día local | Corregido | `CURRENT_TIMESTAMP` persiste UTC, pero los filtros diarios comparaban `DATE(fecha_hora)` contra fechas locales de Python. Dashboard y Estadísticas podían excluir una Venta correctamente persistida. | Las consultas usan `DATE(v.fecha_hora, 'localtime')` para filtrar, seleccionar, agrupar y ordenar; una regresión portable verifica resumen y serie diaria. |
+| INC-02 | Shell visual y navegación interna de Etapa 12 | Resuelto | Las vistas usaban una barra superior mínima y estilos Bootstrap claros, sin navegación persistente, jerarquía visual ni diferenciación suficiente por rol. | Se incorporaron sidebar desktop, offcanvas móvil, menú ADMIN/VENDEDOR, estado activo accesible, header público separado y tema oscuro centralizado. Se agregaron seis regresiones estructurales y la validación humana desktop/mobile quedó aprobada. |
+| INC-03 | Timestamps UTC mostrados en interfaz | Resuelto | Caja, Dashboard, Ventas y Movimientos proyectaban directamente valores SQLite UTC, por lo que la hora visible podía diferir de la hora local del equipo. | Se registró el filtro Jinja `local_datetime`, que interpreta strings SQLite como UTC y usa `astimezone()` para presentar la zona local. No cambia schema, datos ni agregaciones de Estadísticas; la presentación local fue aprobada en la validación humana. |
 
 Durante la construcción de las nuevas pruebas se corrigieron dos supuestos del propio test: el historial de movimientos es ADMIN y las conexiones SQLite deben cerrarse explícitamente antes de reemplazar un archivo en Windows. Ninguno requirió modificar reglas o código funcional del MVP.
 
@@ -143,8 +175,8 @@ La búsqueda de `TODO`, `FIXME`, `NotImplemented` y `placeholder` no encontró s
 - Catálogo no tiene tabla porque reutiliza Producto, Categoría e Inventario sin duplicar datos.
 - El aislamiento combina el comercio del usuario autenticado, filtros SQL y pruebas con dos comercios.
 - El seed existe para una demostración reproducible, es manual, separado de la base normal y contiene credenciales conocidas exclusivamente locales.
-- `develop` todavía necesita review de esta rama y validación visual antes de una promoción revisada hacia `main`.
+- La corrección `fix/ui-etapa12` todavía necesita review e integración a `develop` antes de una promoción posterior y revisada hacia `main`; la validación visual humana ya fue completada.
 
 ## Resultado
 
-La evidencia automatizada del MVP queda aprobada con `283 passed`. La incidencia temporal quedó reproducida y corregida sin cambiar cómo se almacenan timestamps, migrar datos o modificar reglas de negocio. La promoción queda condicionada a review, Pull Request hacia `develop` y validación visual humana.
+La evidencia automatizada del MVP queda aprobada con `296 passed` y la validación visual humana desktop/mobile quedó completada. INC-01, INC-02 e INC-03 están resueltas y cubiertas por regresiones sin modificar esquema ni reglas de negocio. Restan la review y el Pull Request de la corrección hacia `develop`, su merge y el cierre del Issue #16 antes de evaluar una promoción posterior hacia `main`.
