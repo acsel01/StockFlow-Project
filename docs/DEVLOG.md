@@ -476,4 +476,4 @@ El Issue #13 quedó implementado y probado: el futuro Punto de Venta dispone de 
 
 ### Pendiente
 
-El Issue #13 queda listo para revisión. Falta subir `feature/ventas` al remoto y abrir el Pull Request hacia `develop`; no se realizó merge ni se cerró el Issue.
+Pull Request #24 abierto desde `feature/ventas` hacia `develop`, revisado y pendiente de merge. No se avanzó con los Issues #11 ni #18.
