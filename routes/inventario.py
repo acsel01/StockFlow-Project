@@ -12,6 +12,7 @@ from flask import (
 )
 
 from database.db import get_db
+from services.inventario_service import get_availability_status
 
 from .auth import login_required, role_required
 
@@ -208,17 +209,6 @@ def movements():
         search=search,
         selected_type=movement_type,
     )
-
-
-def get_availability_status(current_stock, minimum_stock):
-    """Deriva la disponibilidad sin almacenarla en la base de datos."""
-    if current_stock == 0:
-        return "Agotado"
-
-    if current_stock <= minimum_stock:
-        return "Pocas unidades"
-
-    return "Disponible"
 
 
 def apply_stock_movement(
