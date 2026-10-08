@@ -3,12 +3,13 @@
 {% block title %}Inicio de sesión | StockFlow{% endblock %}
 
 {% block content %}
-<section class="row justify-content-center">
+<section class="sf-login-section">
   <div class="col-12 col-md-7 col-lg-5">
-    <div class="card border-0 shadow-sm">
-      <div class="card-body p-4">
-        <span class="badge text-bg-success mb-3">Acceso interno</span>
-        <h1 class="h3 mb-3">Iniciar sesión</h1>
+    <div class="card sf-login-card">
+      <div class="card-body p-4 p-md-5">
+        <div class="sf-login-mark"><span class="sf-monogram sf-monogram-sm" aria-hidden="true">SF</span> Acceso interno</div>
+        <h1 class="h3 mb-2">Iniciar sesión</h1>
+        <p class="text-secondary mb-4">Ingresá a la operación diaria de tu comercio.</p>
 
         {% if error %}
           <div class="alert alert-danger" role="alert">{{ error }}</div>
@@ -39,7 +40,7 @@
               required
             >
           </div>
-          <button class="btn btn-success w-100" type="submit">Iniciar sesión</button>
+          <button class="btn btn-success w-100 py-2" type="submit">Iniciar sesión</button>
         </form>
       </div>
     </div>

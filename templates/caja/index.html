@@ -3,22 +3,22 @@
 {% block title %}Caja | StockFlow{% endblock %}
 
 {% block content %}
-  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+  <div class="sf-page-header d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
     <div>
-      <p class="text-uppercase text-secondary small fw-semibold mb-1">Operación diaria</p>
+      <p class="sf-kicker text-uppercase mb-1">Operación diaria</p>
       <h1 class="h2 mb-0">Caja</h1>
     </div>
     {% if open_cash_register %}
-      <span class="badge text-bg-success fs-6">ABIERTA</span>
+      <span class="sf-status-pill is-open">Caja abierta</span>
     {% else %}
-      <span class="badge text-bg-secondary fs-6">Sin caja abierta</span>
+      <span class="sf-status-pill">Sin caja abierta</span>
     {% endif %}
   </div>
 
   {% if open_cash_register %}
     <div class="row g-4">
       <div class="col-lg-8">
-        <section class="card shadow-sm h-100">
+        <section class="card h-100">
           <div class="card-body">
             <h2 class="h5">Resumen de la caja</h2>
             <p class="text-secondary mb-4">
@@ -28,31 +28,31 @@
             </p>
             <div class="row g-3">
               <div class="col-sm-6 col-xl-4">
-                <div class="border rounded p-3 h-100">
+                <div class="sf-stat-tile">
                   <div class="text-secondary small">Monto inicial</div>
                   <div class="fs-4 fw-semibold">$ {{ "%.2f"|format(open_cash_register.monto_inicial) }}</div>
                 </div>
               </div>
               <div class="col-sm-6 col-xl-4">
-                <div class="border rounded p-3 h-100">
+                <div class="sf-stat-tile">
                   <div class="text-secondary small">Ventas completadas</div>
                   <div class="fs-4 fw-semibold">{{ open_summary.cantidad_ventas }}</div>
                 </div>
               </div>
               <div class="col-sm-6 col-xl-4">
-                <div class="border rounded p-3 h-100">
+                <div class="sf-stat-tile">
                   <div class="text-secondary small">Total vendido</div>
                   <div class="fs-4 fw-semibold">$ {{ "%.2f"|format(open_summary.total_vendido) }}</div>
                 </div>
               </div>
               <div class="col-sm-6 col-xl-4">
-                <div class="border rounded p-3 h-100">
+                <div class="sf-stat-tile">
                   <div class="text-secondary small">Efectivo</div>
                   <div class="fw-semibold">$ {{ "%.2f"|format(open_summary.total_efectivo) }}</div>
                 </div>
               </div>
               <div class="col-sm-6 col-xl-4">
-                <div class="border rounded p-3 h-100">
+                <div class="sf-stat-tile">
                   <div class="text-secondary small">Débito / Crédito</div>
                   <div class="fw-semibold">
                     $ {{ "%.2f"|format(open_summary.total_debito) }} /
@@ -61,7 +61,7 @@
                 </div>
               </div>
               <div class="col-sm-6 col-xl-4">
-                <div class="border rounded p-3 h-100">
+                <div class="sf-stat-tile">
                   <div class="text-secondary small">Transferencia</div>
                   <div class="fw-semibold">$ {{ "%.2f"|format(open_summary.total_transferencia) }}</div>
                 </div>
@@ -75,7 +75,7 @@
         </section>
       </div>
       <div class="col-lg-4">
-        <section class="card shadow-sm">
+        <section class="card">
           <div class="card-body">
             <h2 class="h5">Cerrar caja</h2>
             <p class="text-secondary small">Ingresá el efectivo contado al finalizar el turno.</p>
@@ -94,7 +94,7 @@
   {% else %}
     <div class="row g-4">
       <div class="col-lg-6">
-        <section class="card shadow-sm">
+        <section class="card">
           <div class="card-body p-4">
             <h2 class="h5">Abrir una nueva caja</h2>
             <p class="text-secondary">Indicá el efectivo disponible al comenzar el turno.</p>
@@ -112,7 +112,7 @@
 
       {% if last_closed_cash_register %}
         <div class="col-lg-6">
-          <section class="card shadow-sm">
+          <section class="card">
             <div class="card-body p-4">
               <h2 class="h5">Último cierre</h2>
               <p class="text-secondary small">

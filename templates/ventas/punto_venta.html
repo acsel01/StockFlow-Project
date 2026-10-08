@@ -3,12 +3,12 @@
 {% block title %}Punto de venta | StockFlow{% endblock %}
 
 {% block content %}
-  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+  <div class="sf-page-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
-      <p class="text-uppercase text-secondary small fw-semibold mb-1">Operación comercial</p>
+      <p class="sf-kicker text-uppercase mb-1">Operación comercial</p>
       <h1 class="h2 mb-1">Punto de venta</h1>
       {% if open_cash_register %}
-        <p class="text-success mb-0">Caja #{{ open_cash_register.id_caja }} abierta</p>
+        <p class="text-success small fw-semibold mb-0">Caja #{{ open_cash_register.id_caja }} abierta</p>
       {% else %}
         <p class="text-danger mb-0">No hay una caja abierta</p>
       {% endif %}
@@ -25,7 +25,7 @@
 
   <div class="row g-4">
     <div class="col-xl-7">
-      <section class="card border-0 shadow-sm mb-4">
+      <section class="card sf-filter-card mb-4">
         <div class="card-body">
           <form class="d-flex flex-column flex-md-row gap-2" method="get">
             <label class="visually-hidden" for="q">Buscar productos</label>
@@ -46,7 +46,7 @@
         </div>
       </section>
 
-      <section class="card border-0 shadow-sm">
+      <section class="card sf-table-card">
         <div class="card-header bg-white py-3">
           <h2 class="h5 mb-0">Productos disponibles</h2>
         </div>
@@ -73,14 +73,13 @@
                       <input type="hidden" name="q" value="{{ search }}">
                       <label class="visually-hidden" for="cantidad-{{ product.id_producto }}">Cantidad</label>
                       <input
-                        class="form-control form-control-sm"
+                        class="form-control form-control-sm sf-quantity-input"
                         id="cantidad-{{ product.id_producto }}"
                         name="cantidad"
                         type="number"
                         min="1"
                         max="{{ product.stock_actual }}"
                         value="1"
-                        style="max-width: 5rem"
                         required
                       >
                       <button class="btn btn-sm btn-success" type="submit" {{ "disabled" if product.stock_actual == 0 else "" }}>Agregar</button>
@@ -89,7 +88,7 @@
                 </tr>
               {% else %}
                 <tr>
-                  <td class="text-center text-secondary py-5" colspan="5">No se encontraron productos disponibles.</td>
+                  <td class="sf-empty-state" colspan="5">No se encontraron productos disponibles.</td>
                 </tr>
               {% endfor %}
             </tbody>
@@ -99,7 +98,7 @@
     </div>
 
     <div class="col-xl-5">
-      <section class="card border-0 shadow-sm position-sticky" style="top: 1rem">
+      <section class="card position-sticky sf-pos-cart">
         <div class="card-header bg-white py-3">
           <h2 class="h5 mb-0">Carrito</h2>
         </div>
@@ -138,10 +137,10 @@
               </div>
             </div>
           {% else %}
-            <p class="text-secondary text-center py-4">El carrito está vacío.</p>
+            <p class="sf-empty-state">El carrito está vacío.</p>
           {% endfor %}
 
-          <div class="d-flex justify-content-between align-items-center border-top pt-3 mb-3">
+          <div class="sf-pos-total d-flex justify-content-between align-items-center mb-3">
             <span class="fs-5 fw-semibold">Total</span>
             <strong class="fs-4" id="pos-total" data-total="{{ cart_total }}">$ {{ "%.2f"|format(cart_total) }}</strong>
           </div>
