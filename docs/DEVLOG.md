@@ -309,4 +309,4 @@ El Issue #10 quedó implementado y probado: ADMIN puede administrar stock con tr
 
 ### Pendiente
 
-Pull Request #22 abierto desde `feature/inventario` hacia `develop`, revisado y pendiente de merge. No se avanzó con el Issue #11.
+Pull Request #22 mergeado a `develop` mediante el merge commit `5287010`. El Issue #10 fue cerrado como completado y no queda trabajo pendiente para este Issue.
