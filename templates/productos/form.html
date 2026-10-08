@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} | StockFlow{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-xl-9">
+    <div class="sf-page-header d-flex justify-content-between align-items-center gap-3 mb-4">
+      <div>
+        <p class="sf-kicker text-uppercase mb-1">Productos</p>
+        <h1 class="h2 mb-0">{{ title }}</h1>
+      </div>
+      <a class="btn btn-outline-secondary" href="{{ url_for('productos.index') }}">Volver</a>
+    </div>
+
+    <div class="card">
+      <div class="card-body p-4">
+        {% if error %}
+          <div class="alert alert-danger" role="alert">{{ error }}</div>
+        {% endif %}
+
+        {% if not categories %}
+          <div class="alert alert-warning">
+            Primero necesitás una categoría activa.
+            <a href="{{ url_for('productos.categories') }}">Administrar categorías</a>.
+          </div>
+        {% endif %}
+
+        <form method="post">
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label class="form-label" for="nombre">Nombre</label>
+              <input class="form-control" id="nombre" name="nombre" value="{{ form['nombre'] }}" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label" for="id_categoria">Categoría</label>
+              <select class="form-select" id="id_categoria" name="id_categoria" required>
+                <option value="">Seleccionar</option>
+                {% for category in categories %}
+                  <option
+                    value="{{ category['id_categoria'] }}"
+                    {% if category['id_categoria']|string == form['id_categoria']|string %}selected{% endif %}
+                    {% if not category['activa'] %}disabled{% endif %}
+                  >
+                    {{ category["nombre"] }}{% if not category["activa"] %} (inactiva){% endif %}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label" for="descripcion">Descripción</label>
+              <textarea class="form-control" id="descripcion" name="descripcion" rows="3">{{ form['descripcion'] or '' }}</textarea>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label" for="codigo_barras">Código de barras</label>
+              <input class="form-control" id="codigo_barras" name="codigo_barras" value="{{ form['codigo_barras'] or '' }}">
+              <div class="form-text">Opcional y único dentro del comercio.</div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label" for="precio_compra">Precio de compra</label>
+              <input
+                class="form-control"
+                id="precio_compra"
+                name="precio_compra"
+                type="number"
+                min="0"
+                step="0.01"
+                value="{{ form['precio_compra'] }}"
+                required
+              >
+            </div>
+            <div class="col-md-4">
+              <label class="form-label" for="precio_venta">Precio de venta</label>
+              <input
+                class="form-control"
+                id="precio_venta"
+                name="precio_venta"
+                type="number"
+                min="0"
+                step="0.01"
+                value="{{ form['precio_venta'] }}"
+                required
+              >
+            </div>
+            <div class="col-12">
+              <label class="form-label" for="imagen_url">URL de imagen</label>
+              <input class="form-control" id="imagen_url" name="imagen_url" type="url" value="{{ form['imagen_url'] or '' }}">
+            </div>
+          </div>
+
+          <hr class="my-4">
+
+          <h2 class="h5">Publicación y estado</h2>
+          <p class="text-secondary small">
+            Mostrar el precio solo tiene efecto cuando el producto es visible, pero ambas opciones se guardan de forma independiente.
+          </p>
+          <div class="d-flex flex-column gap-2 mb-4">
+            <div class="form-check">
+              <input class="form-check-input" id="visible_catalogo" name="visible_catalogo" type="checkbox" {% if form['visible_catalogo'] %}checked{% endif %}>
+              <label class="form-check-label" for="visible_catalogo">Visible en Catálogo</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" id="mostrar_precio_catalogo" name="mostrar_precio_catalogo" type="checkbox" {% if form['mostrar_precio_catalogo'] %}checked{% endif %}>
+              <label class="form-check-label" for="mostrar_precio_catalogo">Mostrar precio de venta en Catálogo</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" id="activo" name="activo" type="checkbox" {% if form['activo'] %}checked{% endif %}>
+              <label class="form-check-label" for="activo">Producto activo</label>
+            </div>
+          </div>
+
+          <button class="btn btn-success" type="submit" {% if not categories %}disabled{% endif %}>{{ submit_label }}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

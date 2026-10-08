@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}Inventario | StockFlow{% endblock %}
+
+{% block content %}
+<div class="sf-page-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+  <div>
+    <p class="sf-kicker text-uppercase mb-1">Stock</p>
+    <h1 class="h2 mb-1">Inventario</h1>
+    <p class="text-secondary mb-0">Consultá existencias y disponibilidad de cada producto.</p>
+  </div>
+  {% if g.user["rol"] == "ADMIN" %}
+    <a class="btn btn-outline-secondary" href="{{ url_for('inventario.movements') }}">Historial de movimientos</a>
+  {% endif %}
+</div>
+
+<form class="card sf-filter-card mb-4" method="get">
+  <div class="card-body d-flex flex-column flex-lg-row gap-2">
+    <label class="visually-hidden" for="q">Buscar inventario</label>
+    <input
+      class="form-control"
+      id="q"
+      name="q"
+      type="search"
+      value="{{ search }}"
+      placeholder="Buscar por producto o código de barras"
+    >
+    <label class="visually-hidden" for="estado">Estado</label>
+    <select class="form-select" id="estado" name="estado">
+      <option value="">Todos los estados</option>
+      <option value="bajo" {% if availability_filter == "bajo" %}selected{% endif %}>Agotados o con pocas unidades</option>
+    </select>
+    <button class="btn btn-dark" type="submit">Filtrar</button>
+    {% if search or availability_filter %}
+      <a class="btn btn-outline-secondary" href="{{ url_for('inventario.index') }}">Limpiar</a>
+    {% endif %}
+  </div>
+</form>
+
+<div class="card sf-table-card">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Producto</th>
+          <th>Categoría</th>
+          <th>Código</th>
+          {% if g.user["rol"] == "ADMIN" %}<th>Compra</th>{% endif %}
+          <th>Venta</th>
+          <th>Stock actual</th>
+          <th>Stock mínimo</th>
+          <th>Disponibilidad</th>
+          <th>Producto</th>
+          {% if g.user["rol"] == "ADMIN" %}<th class="text-end">Acciones</th>{% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for inventory in inventories %}
+          <tr>
+            <td class="fw-semibold">{{ inventory["producto_nombre"] }}</td>
+            <td>{{ inventory["categoria_nombre"] }}</td>
+            <td>{{ inventory["codigo_barras"] or "—" }}</td>
+            {% if g.user["rol"] == "ADMIN" %}
+              <td class="admin-purchase-price">${{ "%.2f"|format(inventory["precio_compra"]) }}</td>
+            {% endif %}
+            <td>${{ "%.2f"|format(inventory["precio_venta"]) }}</td>
+            <td class="fs-5 fw-semibold">{{ inventory["stock_actual"] }}</td>
+            <td>
+              {% if g.user["rol"] == "ADMIN" %}
+                <form
+                  class="d-flex gap-2"
+                  method="post"
+                  action="{{ url_for('inventario.update_minimum_stock', inventory_id=inventory['id_inventario']) }}"
+                >
+                  <input
+                    class="form-control form-control-sm sf-stock-minimum-input"
+                    name="stock_minimo"
+                    type="number"
+                    min="0"
+                    step="1"
+                    value="{{ inventory['stock_minimo'] }}"
+                    aria-label="Stock mínimo de {{ inventory['producto_nombre'] }}"
+                    required
+                  >
+                  <button class="btn btn-sm btn-outline-secondary" type="submit">Guardar</button>
+                </form>
+              {% else %}
+                {{ inventory["stock_minimo"] }}
+              {% endif %}
+            </td>
+            <td>
+              {% set badge = {
+                'Disponible': 'text-bg-success',
+                'Pocas unidades': 'text-bg-warning',
+                'Agotado': 'text-bg-danger'
+              } %}
+              <span class="badge {{ badge[inventory['availability']] }}">{{ inventory["availability"] }}</span>
+            </td>
+            <td>{{ "Activo" if inventory["producto_activo"] else "Inactivo" }}</td>
+            {% if g.user["rol"] == "ADMIN" %}
+              <td class="text-end">
+                <a
+                  class="btn btn-sm btn-outline-primary"
+                  href="{{ url_for('inventario.adjust_stock', inventory_id=inventory['id_inventario']) }}"
+                >Ajustar stock</a>
+              </td>
+            {% endif %}
+          </tr>
+        {% else %}
+          <tr>
+            <td
+              class="sf-empty-state"
+              colspan="{{ 10 if g.user['rol'] == 'ADMIN' else 8 }}"
+            >No se encontraron productos en Inventario.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
