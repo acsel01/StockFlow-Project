@@ -3,8 +3,9 @@
 ## Corte
 
 - Fecha: 2026-10-08
-- Rama de corrección actual: `fix/ui-etapa12`
-- Base: `develop` en `665c8e147305cc0dcd1b41563a4bafdaf0a3c743`
+- Rama validada e integrada: `develop`
+- Integración técnica: PR #31, merge commit `665c8e147305cc0dcd1b41563a4bafdaf0a3c743`
+- Corrección visual y QA final: PR #32, merge commit `fb9ca85b0d24abe5fc296884c60eff8461a22a2b`
 - Suite automatizada: `296 passed`
 - Pruebas agregadas: 8 de integración, 6 estructurales de navegación y 7 de polish/presentación temporal
 - Trazabilidad principal: `PB28 · PB29 · PB30`
@@ -145,6 +146,8 @@ En desktop se verificaron Catálogo público, Login, Dashboard ADMIN, POS, Caja 
 
 En mobile `390×844` se verificaron Dashboard, menú hamburguesa y offcanvas completo, navegación ADMIN, POS, Caja, Inventario, Productos, Ventas, Estadísticas, Catálogo público y Login.
 
+Antes del merge final se completó un spot-check adicional para respaldar los ítems que no habían quedado observados explícitamente en las capturas iniciales: Dashboard VENDEDOR, formulario de Producto, Categorías, ajuste de stock, historial de Movimientos, detalle de Venta y mensaje de error del POS por efectivo insuficiente. Todos quedaron aprobados.
+
 No se observó overflow horizontal global. El sidebar desktop se reemplaza por el offcanvas mobile; cards y KPIs se apilan; los formularios pasan a disposición vertical; la búsqueda, los productos y el carrito del POS se apilan; el grid desktop del Catálogo pasa a una columna; y Estadísticas apila KPIs, gráficos y rankings.
 
 Las tablas de Inventario, Productos, Ventas y productos del POS conservan deliberadamente su estructura tabular dentro de contenedores `table-responsive` con scroll horizontal contenido. Esta decisión preserva su legibilidad en mobile y no constituye una incidencia, ya que no genera overflow en la página.
@@ -175,8 +178,12 @@ La búsqueda de `TODO`, `FIXME`, `NotImplemented` y `placeholder` no encontró s
 - Catálogo no tiene tabla porque reutiliza Producto, Categoría e Inventario sin duplicar datos.
 - El aislamiento combina el comercio del usuario autenticado, filtros SQL y pruebas con dos comercios.
 - El seed existe para una demostración reproducible, es manual, separado de la base normal y contiene credenciales conocidas exclusivamente locales.
-- La corrección `fix/ui-etapa12` todavía necesita review e integración a `develop` antes de una promoción posterior y revisada hacia `main`; la validación visual humana ya fue completada.
+- La corrección `fix/ui-etapa12` fue revisada e integrada a `develop` mediante el PR #32; una eventual promoción hacia `main` permanece como un paso posterior y separado.
 
 ## Resultado
 
-La evidencia automatizada del MVP queda aprobada con `296 passed` y la validación visual humana desktop/mobile quedó completada. INC-01, INC-02 e INC-03 están resueltas y cubiertas por regresiones sin modificar esquema ni reglas de negocio. Restan la review y el Pull Request de la corrección hacia `develop`, su merge y el cierre del Issue #16 antes de evaluar una promoción posterior hacia `main`.
+La evidencia automatizada del MVP queda aprobada con `296 passed` y la validación visual humana desktop/mobile quedó completada. INC-01, INC-02 e INC-03 están resueltas y cubiertas por regresiones sin modificar esquema ni reglas de negocio.
+
+La integración técnica fue incorporada mediante el PR #31 y la corrección visual/QA final mediante el PR #32. Con ambos merges presentes en `develop`, la checklist visual 16/16 respaldada y sin errores críticos abiertos, los criterios de aceptación del Issue #16 quedan cumplidos. El Issue se cierra como completado.
+
+La promoción `develop → main` queda fuera de este cierre y se realizará únicamente como un paso posterior revisado.

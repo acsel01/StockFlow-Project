@@ -931,6 +931,8 @@ En viewport mobile `390×844` verificó Dashboard, menú hamburguesa y offcanvas
 
 Las tablas de Inventario, Productos, Ventas y productos del POS mantienen su estructura tabular con scroll horizontal contenido por `table-responsive`. Se acepta como decisión responsive deliberada para preservar legibilidad y no como incidencia, porque no provoca overflow global de la página.
 
+Durante la review final del PR #32 se completó además un spot-check humano de los ítems que no habían quedado observados de forma explícita en las capturas iniciales: Dashboard VENDEDOR, formulario de Producto, Categorías, ajuste de stock, historial de Movimientos, detalle de Venta y feedback de error en POS por efectivo insuficiente. Todos quedaron aprobados y la checklist visual 16/16 quedó respaldada por revisión humana real.
+
 INC-02 e INC-03 quedan resueltas. La revisión humana no encontró nuevos bloqueantes después del polish.
 
 ### Decisiones técnicas
@@ -945,7 +947,7 @@ INC-02 e INC-03 quedan resueltas. La revisión humana no encontró nuevos bloque
 - La creación atómica en un archivo temporal evita dejar una base demo parcial. El reemplazo solo está habilitado mediante `--reset` explícito.
 - La validación visual humana desktop y mobile `390×844` quedó completada después del polish. Las tablas operativas conservan scroll horizontal contenido en mobile para mantener su legibilidad sin generar overflow global.
 - Se eliminaron únicamente el template placeholder sin referencias; las menciones históricas del DEVLOG y los atributos HTML `placeholder` se conservaron.
-- La rama prepara evidencia para review y PR hacia `develop`; no autoriza ni realiza una promoción directa a `main`.
+- La integración final se realizó primero sobre `develop`; la promoción posterior hacia `main` permanece como un paso separado y revisable.
 
 ### Pruebas realizadas
 
@@ -973,13 +975,12 @@ La auditoría no encontró stubs activos. Las coincidencias restantes son texto 
 
 El MVP quedó integrado y respaldado por evidencia automatizada de flujo completo, permisos, errores seguros, rollback, aislamiento, base limpia y datos demo reproducibles. La validación visual humana desktop/mobile quedó aprobada; las incidencias temporales y visuales están resueltas y cubiertas por regresión, sin modificar esquema, datos persistidos ni reglas de negocio.
 
+El Pull Request #31 de `test/integracion-mvp` integró la evidencia técnica a `develop` mediante el merge commit `665c8e147305cc0dcd1b41563a4bafdaf0a3c743`. Después de la QA humana y las correcciones INC-02/INC-03, el Pull Request #32 de `fix/ui-etapa12` fue revisado sin conflictos y mergeado a `develop` mediante `fb9ca85b0d24abe5fc296884c60eff8461a22a2b`.
+
+La suite final registrada para esta versión es `296 passed`; `compileall` y `git diff --check` finalizaron correctamente. La checklist visual quedó 16/16 después del spot-check final de las pantallas secundarias y estados de error.
+
 ### Pendiente
 
-El Pull Request #31 de `test/integracion-mvp` fue mergeado a `develop` en `665c8e1`. La validación visual humana quedó completada. Solo resta:
+No queda trabajo pendiente dentro del Issue #16. Sus criterios de aceptación quedaron cumplidos y el Issue se cierra como completado.
 
-- abrir el Pull Request `fix/ui-etapa12 → develop`;
-- hacer el merge después de la review;
-- cerrar el Issue #16;
-- posteriormente revisar la promoción `develop → main`.
-
-El Issue #16 permanece abierto. No se hizo merge ni Pull Request de la corrección visual y no se promovió `develop` a `main`.
+La promoción `develop → main` es el siguiente paso separado del flujo de integración y todavía no se realizó.
