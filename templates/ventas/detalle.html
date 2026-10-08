@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Venta #{{ sale.id_venta }} | StockFlow{% endblock %}
+
+{% block content %}
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+      <p class="text-uppercase text-secondary small fw-semibold mb-1">Detalle histórico</p>
+      <h1 class="h2 mb-1">Venta #{{ sale.id_venta }}</h1>
+      <p class="text-secondary mb-0">{{ sale.fecha_hora }}</p>
+    </div>
+    <a class="btn btn-outline-secondary" href="{{ url_for('ventas.historial') }}">Volver al historial</a>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-lg-7">
+      <section class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <h2 class="h5 mb-3">Datos de la venta</h2>
+          <dl class="row mb-0">
+            <dt class="col-sm-5">Vendedor</dt>
+            <dd class="col-sm-7">{{ sale.vendedor_nombre }} {{ sale.vendedor_apellido or "" }}</dd>
+            <dt class="col-sm-5">Caja</dt>
+            <dd class="col-sm-7">#{{ sale.id_caja }}</dd>
+            <dt class="col-sm-5">Medio de pago</dt>
+            <dd class="col-sm-7">{{ sale.medio_pago }}</dd>
+            <dt class="col-sm-5">Estado</dt>
+            <dd class="col-sm-7">{{ sale.estado }}</dd>
+            {% if sale.observaciones %}
+              <dt class="col-sm-5">Observaciones</dt>
+              <dd class="col-sm-7">{{ sale.observaciones }}</dd>
+            {% endif %}
+          </dl>
+        </div>
+      </section>
+    </div>
+    <div class="col-lg-5">
+      <section class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <h2 class="h5 mb-3">Importes</h2>
+          <dl class="row mb-0">
+            <dt class="col-7">Subtotal</dt>
+            <dd class="col-5 text-end">$ {{ "%.2f"|format(sale.subtotal) }}</dd>
+            <dt class="col-7">Descuento</dt>
+            <dd class="col-5 text-end">$ {{ "%.2f"|format(sale.descuento) }}</dd>
+            <dt class="col-7 fs-5">Total</dt>
+            <dd class="col-5 text-end fs-5 fw-semibold">$ {{ "%.2f"|format(sale.total) }}</dd>
+            {% if sale.medio_pago == "EFECTIVO" %}
+              <dt class="col-7">Dinero recibido</dt>
+              <dd class="col-5 text-end">$ {{ "%.2f"|format(sale.dinero_recibido) }}</dd>
+              <dt class="col-7">Vuelto</dt>
+              <dd class="col-5 text-end">$ {{ "%.2f"|format(sale.vuelto) }}</dd>
+            {% endif %}
+          </dl>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <section class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3"><h2 class="h5 mb-0">Productos vendidos</h2></div>
+    <div class="table-responsive">
+      <table class="table align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Producto</th>
+            <th>Código</th>
+            <th class="text-end">Cantidad</th>
+            <th class="text-end">Precio unitario histórico</th>
+            <th class="text-end">Subtotal histórico</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for line in lines %}
+            <tr>
+              <td>{{ line.producto_nombre }}</td>
+              <td>{{ line.codigo_barras or "—" }}</td>
+              <td class="text-end">{{ line.cantidad }}</td>
+              <td class="text-end">$ {{ "%.2f"|format(line.precio_unitario) }}</td>
+              <td class="text-end fw-semibold">$ {{ "%.2f"|format(line.subtotal) }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}
