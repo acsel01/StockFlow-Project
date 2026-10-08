@@ -722,10 +722,10 @@ def test_vendor_never_sees_costs_margins_or_profit(app, client):
         assert "ganancia" not in page
 
 
-def test_point_of_sale_remains_a_placeholder(app, client):
+def test_point_of_sale_is_available_to_internal_users(app, client):
     _authenticate(client, app.config["TEST_IDS"]["admin_a"])
 
     page = client.get("/punto-venta").get_data(as_text=True)
 
-    assert "Módulo preparado para comenzar su implementación" in page
-    assert "carrito" not in page.lower()
+    assert "Punto de venta" in page
+    assert "Carrito" in page
