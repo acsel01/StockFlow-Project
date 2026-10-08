@@ -764,7 +764,7 @@ Implementar el catálogo informativo y público de StockFlow para que cualquier 
 - Además de filtrar por `commerce_id`, los joins entre Producto y Categoría exigen que ambos pertenezcan al mismo comercio. Esta defensa en profundidad evita proyectar asociaciones inconsistentes introducidas directamente en SQLite o por futuras regresiones fuera del CRUD validado.
 - El acceso es anónimo y de solo lectura. Los endpoints públicos no ejecutan `INSERT`, `UPDATE`, `DELETE` ni `commit`.
 - Un comercio activo sin publicaciones muestra un estado vacío específico; una búsqueda o filtro sin coincidencias muestra un estado de resultados distinto.
-- La superposición con el Issue #17 se resolvió reutilizando las banderas ya administradas por Productos y la única fuente de precio existente. El Issue queda funcionalmente cubierto, pero permanece abierto hasta su revisión administrativa.
+- La superposición con el Issue #17 se resolvió reutilizando las banderas ya administradas por Productos y la única fuente de precio existente. Después de la revisión y del merge del PR #29, el Issue #17 fue cerrado como completado sin crear una implementación duplicada.
 
 Trazabilidad del Catálogo:
 
@@ -800,6 +800,14 @@ El Issue #15 quedó implementado y probado: el visitante puede seleccionar una t
 
 El Issue #17 quedó cubierto funcionalmente por la misma implementación y por pruebas explícitas de sus cuatro combinaciones, sin agregar esquema ni precio alternativo.
 
+### Cierre de integración
+
+El Pull Request #29 fue mergeado a `develop` mediante el merge commit `85377fc`.
+
+El Issue #15 fue cerrado como completado después de verificar sus criterios de aceptación. El Issue #17 también fue cerrado como completado porque su alcance quedó cubierto por la misma implementación: las banderas ya existían en Productos y el Catálogo incorporó la proyección condicional del único `precio_venta`.
+
+No se creó una rama `feature/precio-publico` separada porque hubiera duplicado trabajo ya integrado y probado.
+
 ### Pendiente
 
-Quedan pendientes la revisión, el push de `feature/catalogo-publico` y la apertura del Pull Request. Los Issues #15 y #17 permanecen abiertos hasta completar su revisión; no se avanzó con el Issue #16.
+No queda trabajo funcional pendiente para los Issues #15 y #17. El siguiente bloque corresponde al Issue #16 de testing e integración final del MVP.
