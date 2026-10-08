@@ -228,3 +228,85 @@ El Issue #9 quedó implementado y probado: ADMIN puede gestionar Productos y Cat
 ### Pendiente
 
 Pull Request #21 mergeado a `develop` mediante el merge commit `db80030`. El Issue #9 fue cerrado como completado y no queda trabajo pendiente para este Issue.
+
+## 2026-10-08 — Issue #10: Implementar módulo de Inventario
+
+### Rama
+
+`feature/inventario`
+
+### Objetivo
+
+Implementar la consulta y modificación controlada del stock, con trazabilidad completa de cada ajuste, permisos diferenciados y aislamiento por comercio.
+
+### Cambios realizados
+
+- Se reemplazó el placeholder por un listado real de Inventario con búsqueda y filtro de stock bajo.
+- Se incorporaron los estados derivados `Disponible`, `Pocas unidades` y `Agotado`.
+- ADMIN puede modificar stock mínimo y realizar ajustes manuales; VENDEDOR conserva acceso de solo consulta.
+- Se implementaron Reposición, Pérdida, Corrección, Conteo físico y Otro con sus reglas específicas.
+- Se rechazó explícitamente el uso manual del tipo `VENTA`, reservado para el futuro Punto de Venta.
+- Todo cambio de stock actualiza Inventario y crea MovimientoInventario dentro de una única transacción.
+- Se agregó un historial administrativo con búsqueda por producto, filtro por tipo y orden descendente.
+- Se mantuvieron visibles los Inventarios y movimientos de productos inactivos para preservar trazabilidad.
+- Todas las consultas y modificaciones verifican el comercio mediante `g.user["id_comercio"]`.
+
+### Archivos creados o modificados
+
+- `routes/inventario.py`
+- `templates/inventario/index.html`
+- `templates/inventario/ajustar.html`
+- `templates/inventario/movimientos.html`
+- `tests/test_inventory.py`
+- `docs/DEVLOG.md`
+
+### Funciones o componentes importantes
+
+- `index()`: lista Inventario, busca por producto o código y permite filtrar productos agotados o con pocas unidades.
+- `update_minimum_stock()`: valida y actualiza `stock_minimo` sin crear un movimiento de stock.
+- `adjust_stock()`: presenta el formulario administrativo y delega el cambio a la función central.
+- `movements()`: muestra el historial del comercio actual, con filtros y orden reciente primero.
+- `get_availability_status()`: deriva la disponibilidad a partir de `stock_actual` y `stock_minimo`.
+- `apply_stock_movement()`: valida, calcula, actualiza Inventario, inserta MovimientoInventario y confirma o revierte toda la transacción.
+- `_calculate_delta()`: traduce la cantidad ingresada a `cantidad_delta` según la semántica de cada tipo manual.
+- `_get_inventory()` y `_find_inventory()`: recuperan Inventario mediante joins y verifican el comercio actual.
+
+### Decisiones técnicas
+
+- Inventario es la única fuente de verdad para `stock_actual`, `stock_minimo` y `ultima_actualizacion`; Producto conserva solamente la ficha comercial.
+- Todo cambio de `stock_actual` crea MovimientoInventario para conservar quién, cuándo, por qué y cómo cambió el valor.
+- Cambiar `stock_minimo` no crea MovimientoInventario porque no altera existencias, pero sí actualiza `ultima_actualizacion`.
+- `Agotado` corresponde a stock 0; `Pocas unidades` a stock positivo menor o igual al mínimo; `Disponible` a stock mayor al mínimo. El estado no se almacena en una columna.
+- `VENTA` no puede seleccionarse manualmente porque será generada automáticamente por el futuro Punto de Venta.
+- `id_usuario` se toma de `g.user["id_usuario"]` y `id_comercio` de `g.user["id_comercio"]`; ninguno se acepta desde el formulario.
+- La transacción usa `BEGIN IMMEDIATE`, lee el stock actual, calcula y valida el resultado, actualiza Inventario e inserta el movimiento antes del `commit`.
+- Si falla el `UPDATE` o el `INSERT` del movimiento, se ejecuta `rollback` y el stock vuelve a su valor anterior.
+- `stock_anterior` es el valor antes del ajuste, `cantidad_delta` es la variación con signo y `stock_resultante` es el valor final validado.
+- Los productos inactivos conservan Inventario y movimientos; su activación continúa siendo responsabilidad del módulo Productos.
+- No se modificó `database/schema.sql` ni se incorporaron columnas derivadas.
+
+### Pruebas realizadas
+
+Se ejecutó la suite completa con:
+
+```text
+.venv\Scripts\python -m pytest -q
+```
+
+Resultado: `104 passed`.
+
+Las 45 pruebas nuevas cubren permisos, visibilidad por rol, búsquedas, disponibilidad y casos límite, stock mínimo, todos los tipos manuales, prevención de negativos, conteo sin cambios, trazabilidad, productos inactivos, aislamiento entre comercios e historial. También fuerzan un fallo real mediante un trigger SQLite y verifican que el rollback restaure el stock y no deje movimientos parciales.
+
+Se ejecutaron además `python -m compileall` y `git diff --check`, ambos sin errores.
+
+### Problemas encontrados
+
+La rama local `develop` todavía no contenía el merge del Issue #9. Se actualizó mediante `git fetch origin` y `git pull --ff-only origin develop` hasta el merge commit `db80030` antes de crear esta rama. La implementación y las pruebas no presentaron fallos funcionales.
+
+### Resultado
+
+El Issue #10 quedó implementado y probado: ADMIN puede administrar stock con trazabilidad atómica, VENDEDOR puede consultar existencias exactas y ningún usuario accede a Inventario o movimientos de otro comercio.
+
+### Pendiente
+
+Revisión local, push de `feature/inventario` y posterior Pull Request hacia `develop`. No se realizó merge, no se abrió PR y no se avanzó con el Issue #11.
