@@ -1,6 +1,10 @@
-"""Operaciones de inventario y movimientos de stock."""
+"""Reglas reutilizables de Inventario."""
 
 
-def ajustar_stock(connection, producto_id, cantidad, usuario_id, motivo):
-    """Aplicará un ajuste sin permitir existencias negativas."""
-    raise NotImplementedError("Pendiente de implementación en el módulo de Inventario")
+def get_availability_status(current_stock, minimum_stock):
+    """Deriva la disponibilidad actual sin almacenarla en la base."""
+    if current_stock == 0:
+        return "Agotado"
+    if current_stock <= minimum_stock:
+        return "Pocas unidades"
+    return "Disponible"

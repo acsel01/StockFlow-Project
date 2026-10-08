@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}{{ commerce.nombre }} | Catálogo StockFlow{% endblock %}
+
+{% block content %}
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-3 mb-4">
+    <div>
+      <p class="text-uppercase text-secondary small fw-semibold mb-1">Catálogo público</p>
+      <h1 class="display-6 mb-2">{{ commerce.nombre }}</h1>
+      <p class="text-secondary mb-0">{{ commerce.direccion }}</p>
+      {% if commerce.barrio or commerce.localidad %}
+        <p class="text-secondary small mb-0">
+          {{ commerce.barrio or "" }}{% if commerce.barrio and commerce.localidad %}, {% endif %}{{ commerce.localidad or "" }}
+        </p>
+      {% endif %}
+    </div>
+    <a class="btn btn-outline-secondary" href="{{ url_for('catalogo.index') }}">Cambiar comercio</a>
+  </div>
+
+  <form class="card border-0 shadow-sm mb-4" method="get">
+    <div class="card-body row g-2 align-items-end">
+      <div class="col-md-7">
+        <label class="form-label" for="q">Buscar por nombre</label>
+        <input class="form-control" id="q" name="q" type="search" value="{{ search }}" placeholder="Nombre del producto">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label" for="categoria">Categoría</label>
+        <select class="form-select" id="categoria" name="categoria">
+          <option value="">Todas</option>
+          {% for category in categories %}
+            <option value="{{ category.id_categoria }}" {{ "selected" if selected_category == category.id_categoria else "" }}>{{ category.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2"><button class="btn btn-dark w-100" type="submit">Filtrar</button></div>
+    </div>
+  </form>
+
+  {% if invalid_category %}
+    <div class="alert alert-warning">La categoría indicada no está disponible en este comercio. Se muestran todas las categorías públicas.</div>
+  {% endif %}
+
+  <div class="row g-4">
+    {% for product in products %}
+      <div class="col-sm-6 col-xl-4">
+        <article class="card border-0 shadow-sm h-100 overflow-hidden">
+          {% if product.image_url %}
+            <img class="card-img-top" src="{{ product.image_url }}" alt="{{ product.name }}" style="height: 220px; object-fit: cover">
+          {% else %}
+            <div class="bg-light d-flex align-items-center justify-content-center text-secondary" style="height: 180px">Sin imagen</div>
+          {% endif %}
+          <div class="card-body d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+              <h2 class="h5 mb-0">{{ product.name }}</h2>
+              {% if product.availability == "Disponible" %}
+                <span class="badge text-bg-success">Disponible</span>
+              {% elif product.availability == "Pocas unidades" %}
+                <span class="badge text-bg-warning">Pocas unidades</span>
+              {% else %}
+                <span class="badge text-bg-danger">Agotado</span>
+              {% endif %}
+            </div>
+            <p class="text-secondary small mb-2">{{ product.category }}</p>
+            {% if product.description %}
+              <p class="card-text">{{ product.description }}</p>
+            {% endif %}
+            <div class="mt-auto pt-2 fs-5 fw-semibold">
+              {% if product.price is not none %}
+                $ {{ "%.2f"|format(product.price) }}
+              {% else %}
+                <span class="text-secondary">Precio no publicado</span>
+              {% endif %}
+            </div>
+          </div>
+        </article>
+      </div>
+    {% else %}
+      <div class="col-12">
+        <div class="alert alert-secondary text-center py-4">
+          {% if search or selected_category or invalid_category %}
+            No se encontraron productos.
+          {% else %}
+            Este comercio todavía no tiene productos publicados.
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% endblock %}
