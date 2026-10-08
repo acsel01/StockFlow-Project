@@ -3,10 +3,10 @@
 ## Corte
 
 - Fecha: 2026-10-08
-- Rama: `test/integracion-mvp`
-- Base: `develop` en `87bd4cc7f601d64507efde2ef673fc469e635177`
-- Suite automatizada: `283 passed`
-- Pruebas agregadas en este bloque: 8
+- Rama de corrección actual: `fix/ui-etapa12`
+- Base: `develop` en `665c8e147305cc0dcd1b41563a4bafdaf0a3c743`
+- Suite automatizada: `289 passed`
+- Pruebas agregadas: 8 de integración y 6 estructurales de navegación
 - Trazabilidad principal: `PB28 · PB29 · PB30`
 
 ## Automatizado
@@ -37,6 +37,13 @@ git diff --check
 - Catálogo público y precio condicional;
 - aislamiento entre comercios;
 - seed demo manual y seguro.
+- shell interno responsive, navegación por rol y separación del layout público.
+
+### Navegación y shell visual
+
+`tests/test_ui_navigation.py` agrega seis casos estructurales para la corrección INC-02. Verifican que ADMIN reciba Dashboard, Punto de venta, Caja, Inventario, Productos, Ventas y Estadísticas; que la navegación persista en Caja y Productos; que VENDEDOR vea únicamente sus cinco secciones operativas; y que Catálogo y Login no expongan el sidebar interno. También comprueban que la sección actual se identifique con `aria-current="page"` y que exista el disparador del offcanvas móvil.
+
+Estas pruebas validan la estructura renderizada y los permisos ya existentes. No sustituyen la revisión humana de contraste, composición, scroll, densidad o ergonomía en viewports reales.
 
 ### Flujos críticos cross-module
 
@@ -103,19 +110,24 @@ El seed no se importa ni ejecuta desde `create_app()` y nunca crea usuarios auto
 
 ## Manual / visual
 
-No se realizó una validación visual humana completa en navegador para este corte. La evidencia automatizada valida rutas, permisos, contenido funcional y estructura Bootstrap, pero no sustituye una revisión visual desktop/mobile.
+La primera validación humana detectó INC-02: el shell y la navegación no estaban alineados con la identidad visual definida para Etapa 12. La corrección fue implementada y cubierta estructuralmente, pero todavía requiere una nueva revisión humana completa en navegador. La evidencia automatizada valida rutas, permisos, contenido funcional y estructura Bootstrap; no sustituye la revisión visual desktop/mobile.
 
 Pendiente de validación visual humana antes de promover `develop` a `main`:
 
 - [ ] Catálogo desktop
 - [ ] Catálogo mobile
+- [ ] Login desktop
+- [ ] Login mobile
 - [ ] Dashboard ADMIN
 - [ ] Dashboard VENDEDOR
 - [ ] Productos
+- [ ] Formularios de Producto y Categorías
 - [ ] Inventario
+- [ ] Ajuste e historial de movimientos
 - [ ] POS
 - [ ] Caja
 - [ ] Ventas
+- [ ] Detalle de Venta
 - [ ] Estadísticas
 - [ ] Mensajes de error
 
@@ -124,6 +136,7 @@ Pendiente de validación visual humana antes de promover `develop` a `main`:
 | ID | Caso | Resultado | Incidencia | Resolución |
 | --- | --- | --- | --- | --- |
 | INC-01 | Venta cercana al cambio de día local | Corregido | `CURRENT_TIMESTAMP` persiste UTC, pero los filtros diarios comparaban `DATE(fecha_hora)` contra fechas locales de Python. Dashboard y Estadísticas podían excluir una Venta correctamente persistida. | Las consultas usan `DATE(v.fecha_hora, 'localtime')` para filtrar, seleccionar, agrupar y ordenar; una regresión portable verifica resumen y serie diaria. |
+| INC-02 | Shell visual y navegación interna de Etapa 12 | Corregido; validación humana pendiente | Las vistas usaban una barra superior mínima y estilos Bootstrap claros, sin navegación persistente, jerarquía visual ni diferenciación suficiente por rol. | Se incorporaron sidebar desktop, offcanvas móvil, menú ADMIN/VENDEDOR, estado activo accesible, header público separado y tema oscuro centralizado. Se agregaron seis regresiones estructurales; la checklist manual permanece abierta. |
 
 Durante la construcción de las nuevas pruebas se corrigieron dos supuestos del propio test: el historial de movimientos es ADMIN y las conexiones SQLite deben cerrarse explícitamente antes de reemplazar un archivo en Windows. Ninguno requirió modificar reglas o código funcional del MVP.
 
@@ -143,8 +156,8 @@ La búsqueda de `TODO`, `FIXME`, `NotImplemented` y `placeholder` no encontró s
 - Catálogo no tiene tabla porque reutiliza Producto, Categoría e Inventario sin duplicar datos.
 - El aislamiento combina el comercio del usuario autenticado, filtros SQL y pruebas con dos comercios.
 - El seed existe para una demostración reproducible, es manual, separado de la base normal y contiene credenciales conocidas exclusivamente locales.
-- `develop` todavía necesita review de esta rama y validación visual antes de una promoción revisada hacia `main`.
+- La corrección `fix/ui-etapa12` todavía necesita review, integración a `develop` y validación visual antes de una promoción revisada hacia `main`.
 
 ## Resultado
 
-La evidencia automatizada del MVP queda aprobada con `283 passed`. La incidencia temporal quedó reproducida y corregida sin cambiar cómo se almacenan timestamps, migrar datos o modificar reglas de negocio. La promoción queda condicionada a review, Pull Request hacia `develop` y validación visual humana.
+La evidencia automatizada del MVP queda aprobada con `289 passed`. INC-01 e INC-02 quedaron cubiertas por regresiones sin modificar esquema ni reglas de negocio. La promoción queda condicionada a review de la corrección, Pull Request hacia `develop` y validación visual humana completa.

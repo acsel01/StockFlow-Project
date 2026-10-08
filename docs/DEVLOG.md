@@ -840,6 +840,7 @@ Validar como conjunto el MVP ya implementado, agregar evidencia cross-module de 
 - Se creó `docs/TESTING_MVP.md` con alcance automatizado, rollback, aislamiento, checklist visual e incidencias.
 - Se auditó deuda y rutas. El template placeholder no tenía referencias activas y fue eliminado.
 - Durante la review se corrigió la clasificación diaria de Ventas para convertir el timestamp UTC persistido a fecha local antes de filtrar o agrupar Estadísticas.
+- Después del merge del PR #31, la validación humana detectó INC-02: el shell visual y la navegación no representaban la interfaz definida para Etapa 12. La corrección se trabajó en `fix/ui-etapa12` desde `develop` en `665c8e147305cc0dcd1b41563a4bafdaf0a3c743`.
 
 ### Archivos creados o modificados
 
@@ -903,6 +904,14 @@ La resolución aplica `DATE(v.fecha_hora, 'localtime')` de forma consistente al 
 
 Durante la construcción de pruebas se corrigieron dos supuestos del propio test: VENDEDOR no accede al historial administrativo de movimientos y las conexiones SQLite deben cerrarse explícitamente antes de reemplazar un archivo en Windows. No se modificó código funcional por estos ajustes.
 
+#### INC-02 — Shell visual y navegación de Etapa 12
+
+La validación humana posterior al PR #31 encontró que la interfaz conservaba una barra superior mínima y estilos Bootstrap claros. Faltaban navegación interna persistente, jerarquía visual, estado de sección activa y una presentación coherente entre desktop y mobile. El problema era de interfaz; no afectaba persistencia, cálculos ni permisos de backend.
+
+La resolución incorporó un shell autenticado compartido con sidebar fijo en desktop y offcanvas Bootstrap en mobile, navegación filtrada por rol, identificación accesible de la sección actual, usuario, rol y cierre de sesión. Catálogo y Login conservan un header público sin navegación interna. La paleta naval/mint, formularios, tablas, tarjetas, estados, POS, Caja, gráficos y vistas secundarias quedaron centralizados en `static/css/stockflow.css`; Chart.js solo recibió opciones de presentación.
+
+Se agregaron seis pruebas en `tests/test_ui_navigation.py` para la estructura ADMIN/VENDEDOR, persistencia del menú, separación pública y `aria-current="page"`. No se modificaron rutas, servicios, consultas SQL, esquema, sesiones ni reglas de autorización.
+
 ### Decisiones técnicas
 
 - #16 agrega evidencia de integración, no un módulo nuevo, porque todas las capacidades de negocio del MVP ya estaban implementadas.
@@ -913,7 +922,7 @@ Durante la construcción de pruebas se corrigieron dos supuestos del propio test
 - Los timestamps de Venta permanecen almacenados en UTC. Solo las consultas por día calendario aplican `localtime`, alineándose con `date.today()` usado por Dashboard y la resolución de períodos.
 - El seed es manual porque una base normal no debe recibir usuarios, contraseñas conocidas o datos ficticios automáticamente.
 - La creación atómica en un archivo temporal evita dejar una base demo parcial. El reemplazo solo está habilitado mediante `--reset` explícito.
-- No se realizó ni se declara una validación visual humana. `TESTING_MVP.md` conserva una checklist desktop/mobile pendiente antes de promover `develop` a `main`.
+- La primera validación visual humana permitió detectar INC-02, pero no constituye aprobación final. `TESTING_MVP.md` conserva toda la checklist desktop/mobile pendiente para una nueva revisión antes de promover `develop` a `main`.
 - Se eliminaron únicamente el template placeholder sin referencias; las menciones históricas del DEVLOG y los atributos HTML `placeholder` se conservaron.
 - La rama prepara evidencia para review y PR hacia `develop`; no autoriza ni realiza una promoción directa a `main`.
 
@@ -925,9 +934,9 @@ Se ejecutó la suite completa con:
 .venv\Scripts\python.exe -m pytest -q
 ```
 
-Resultado: `283 passed`.
+Resultado actualizado después de INC-02: `289 passed`.
 
-Se agregaron ocho pruebas: seis escenarios en `test_mvp_integration.py` y dos del seed en `test_seed_demo.py`. Las 275 pruebas recibidas continúan pasando.
+Se agregaron ocho pruebas en la integración original —seis escenarios en `test_mvp_integration.py` y dos del seed en `test_seed_demo.py`— y seis regresiones estructurales de navegación en la corrección visual. Las 283 pruebas previas a INC-02 continúan pasando.
 
 También se ejecutó:
 
@@ -941,10 +950,10 @@ La auditoría no encontró stubs activos. Las coincidencias restantes son texto 
 
 ### Resultado
 
-El MVP quedó integrado y respaldado por evidencia automatizada de flujo completo, permisos, errores seguros, rollback, aislamiento, base limpia y datos demo reproducibles. La incidencia de clasificación temporal quedó corregida en consultas y cubierta por regresión, sin modificar el esquema ni los datos persistidos.
+El MVP quedó integrado y respaldado por evidencia automatizada de flujo completo, permisos, errores seguros, rollback, aislamiento, base limpia y datos demo reproducibles. Las incidencias temporal y visual quedaron corregidas y cubiertas por regresión, sin modificar esquema, datos persistidos ni reglas de negocio.
 
 ### Pendiente
 
-Quedan pendientes la review de `test/integracion-mvp`, el Pull Request hacia `develop` y la validación visual humana registrada en `docs/TESTING_MVP.md`. Después de esas instancias corresponderá revisar un PR separado `develop → main`.
+El Pull Request #31 de `test/integracion-mvp` fue mergeado a `develop` en `665c8e1`. Quedan pendientes la review y el Pull Request de `fix/ui-etapa12` hacia `develop`, además de la nueva validación visual humana registrada en `docs/TESTING_MVP.md`. Después de esas instancias corresponderá revisar un PR separado `develop → main`.
 
-El Issue #16 permanece abierto. La rama continúa en review; no se hizo merge ni Pull Request.
+El Issue #16 permanece abierto. No se hizo merge ni Pull Request de la corrección visual y no se promovió `develop` a `main`.
