@@ -388,4 +388,4 @@ El Issue #12 quedó implementado y probado: ambos roles internos pueden gestiona
 
 ### Pendiente
 
-Pull Request #23 abierto desde `feature/caja` hacia `develop`, revisado y pendiente de merge. No se avanzó con los Issues #13 ni #11.
+Pull Request #23 mergeado a `develop` mediante el merge commit `fce8528`. El Issue #12 fue cerrado como completado y no queda trabajo pendiente para este Issue.
