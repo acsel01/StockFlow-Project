@@ -1,90 +1,87 @@
 # StockFlow
 
-Sistema web de gestión comercial, inventario y consulta pública de disponibilidad para pequeños comercios.
+StockFlow es un sistema web de gestión comercial, inventario y consulta pública de disponibilidad para kioscos, almacenes y otros comercios pequeños. Integra la operación interna con un catálogo informativo que reutiliza el stock y los precios vigentes.
 
-## Descripción
+Es un **MVP académico funcional y una demo local**. No está presentado ni configurado como un sistema listo para producción.
 
-StockFlow integra en una sola aplicación las tareas diarias de un kiosco, almacén, despensa o comercio pequeño: productos, inventario, ventas, caja y estadísticas. La misma información de stock alimenta un catálogo público para que los clientes puedan consultar productos y disponibilidad antes de acercarse al local.
+## Alcance del MVP
 
-El proyecto se desarrolla como trabajo anual de Programación 2026.
+La versión implementada incluye:
 
-## Objetivo
+- autenticación con sesiones y permisos para ADMIN y VENDEDOR;
+- Dashboard operativo diferenciado por rol;
+- gestión de Productos y Categorías con baja lógica;
+- Inventario, stock mínimo y trazabilidad de movimientos;
+- apertura, seguimiento y cierre de Caja;
+- Punto de Venta con carrito temporal y validación al confirmar;
+- Ventas atómicas con DetalleVenta, descuento de Inventario y MovimientoInventario;
+- historial y detalle de ventas con precios históricos;
+- Estadísticas de ventas, rankings, stock bajo y ganancia bruta estimada;
+- Catálogo público por comercio, búsqueda, categorías y disponibilidad derivada;
+- publicación opcional del precio de venta actual;
+- aislamiento de datos entre comercios;
+- endpoint de salud y creación automática del esquema SQLite;
+- suite automatizada con pruebas unitarias, de integración y end-to-end.
 
-Facilitar la gestión operativa de pequeños comercios, reducir errores de stock y aprovechar la información del inventario para ofrecer una consulta pública simple y actualizada.
+Quedan fuera del MVP:
 
-## Funcionalidades del MVP
+- compra, carrito, reserva o pago en línea;
+- cuentas de clientes, favoritos, delivery o recomendaciones;
+- búsqueda global de productos entre comercios (HU18);
+- Mercado Pago, facturación fiscal, proveedores o devoluciones;
+- múltiples sucursales por comercio;
+- geolocalización y despliegue productivo.
 
-Las siguientes funcionalidades conforman el alcance planificado para la primera versión:
+## Roles
 
-- Inicio de sesión y permisos para administradores y vendedores.
-- Dashboard con información resumida del comercio.
-- Alta, edición, consulta y baja lógica de productos.
-- Categorías, precios, código de barras, visibilidad del producto y publicación configurable del precio.
-- Inventario integrado y registro de movimientos de stock.
-- Punto de venta con descuento automático de existencias.
-- Apertura, seguimiento y cierre básico de caja.
-- Historial y detalle de ventas.
-- Estadísticas de ventas, total vendido e inventario.
-- Catálogo público con estados de disponibilidad y precio solo cuando el comercio habilita su publicación.
-- Diseño adaptable a computadora y celular.
+- **ADMIN:** accede a Dashboard, Productos, Categorías, Inventario y movimientos, Punto de Venta, Caja, Ventas y Estadísticas.
+- **VENDEDOR:** accede al Dashboard operativo, consulta de Inventario, Punto de Venta, Caja y Ventas. No administra Productos, Categorías, movimientos manuales ni Estadísticas económicas.
+- **VISITANTE:** sin autenticación, puede seleccionar un comercio activo y consultar su Catálogo público.
 
-No forman parte del MVP la facturación fiscal, los pagos en línea, los proveedores, las múltiples sucursales ni la geolocalización avanzada.
+No existe una cuenta de Cliente dentro del MVP.
 
-## Equipo y responsabilidades
+## Arquitectura y reglas centrales
 
-La planificación y las decisiones se realizan en equipo. Para organizar el trabajo se definió esta asignación operativa inicial:
-
-| Integrante | Responsabilidad principal |
-| --- | --- |
-| Axel Sosa | Desarrollo e integración |
-| Robert Huyhua | Análisis y documentación |
-| Dilan Amara | Testing y calidad |
-| Natalia Benitez | UX/UI |
-
-## Roles de usuario
-
-- **ADMIN:** acceso completo a dashboard, punto de venta, productos, inventario, caja, ventas, estadísticas y catálogo.
-- **VENDEDOR:** acceso operativo a punto de venta, consulta de inventario, caja y ventas autorizadas.
-- **CLIENTE:** acceso sin autenticación al catálogo público.
-
-La autenticación y la aplicación efectiva de estos permisos forman parte del backlog de desarrollo.
-
-## Tecnologías
-
-| Capa | Tecnología | Uso |
-| --- | --- | --- |
-| Frontend | HTML5, CSS3 y JavaScript | Interfaz y comportamiento |
-| UI | Bootstrap + CSS propio | Componentes adaptables e identidad visual |
-| Backend | Python + Flask | Rutas, sesiones, validaciones y lógica |
-| Base de datos | SQLite | Persistencia local del MVP |
-| Gráficos | Chart.js | Dashboard y estadísticas |
-| Testing | pytest | Pruebas automatizadas |
-
-## Arquitectura
-
-StockFlow utiliza una aplicación web monolítica modular:
+StockFlow usa una aplicación Flask monolítica modular:
 
 ```text
 Navegador
    │
    ▼
-HTML + CSS + JavaScript + Bootstrap
+Templates HTML + Bootstrap + CSS/JS
    │
    ▼
-Flask / Routes
+Flask / routes
    │
    ▼
-Services / Lógica de negocio
+services / reglas y consultas reutilizables
    │
    ▼
 SQLite
 ```
 
-Las rutas reciben las peticiones y delegan la lógica de negocio a los servicios. La operación **Confirmar venta** deberá ejecutarse dentro de una transacción: crear la venta y sus detalles, descontar stock y registrar los movimientos; si una parte falla, se revierte toda la operación.
+El esquema tiene nueve tablas funcionales: Comercio, Usuario, Categoría, Producto, Inventario, MovimientoInventario, Caja, Venta y DetalleVenta.
 
-El esquema contempla nueve entidades: Comercio, Usuario, Categoría, Producto, Inventario, MovimientoInventario, Caja, Venta y DetalleVenta. Producto mantiene un único `precio_venta` y un indicador `mostrar_precio_catalogo` que decide si ese mismo valor puede exponerse públicamente.
+Confirmar una Venta se ejecuta dentro de una única transacción: valida usuario, Caja, productos, precios y stock actuales; crea Venta y DetalleVenta; descuenta Inventario; registra MovimientoInventario y confirma todo junto. Ante un error se revierte la operación completa, por lo que no quedan ventas parciales ni stock negativo.
 
-## Estructura del proyecto
+El carrito del POS no reserva existencias. La confirmación relee la base y rechaza la operación si el stock cambió mientras el carrito estaba abierto.
+
+El Catálogo no posee una tabla propia: proyecta Producto, Categoría e Inventario. La disponibilidad se deriva en cada consulta y el único precio público posible es `Producto.precio_venta`, condicionado por `mostrar_precio_catalogo`. DetalleVenta, en cambio, conserva el precio histórico confirmado.
+
+## Tecnologías
+
+| Capa | Tecnología | Uso |
+| --- | --- | --- |
+| Backend | Python 3.10+ y Flask 3 | Rutas, sesiones y aplicación web |
+| Persistencia | SQLite | Base local y transacciones |
+| Frontend | HTML5, Bootstrap, CSS y JavaScript | Interfaz responsive |
+| Gráficos | Chart.js | Dashboard analítico y Estadísticas |
+| Seguridad | Werkzeug | Hash y verificación de contraseñas |
+| Testing | pytest | Pruebas automatizadas |
+
+No se utiliza ORM ni se requieren dependencias externas adicionales para crear datos demo.
+
+## Estructura del repositorio
 
 ```text
 StockFlow-Project/
@@ -92,6 +89,7 @@ StockFlow-Project/
 ├── requirements.txt
 ├── README.md
 ├── database/
+│   ├── db.py
 │   └── schema.sql
 ├── routes/
 │   ├── auth.py
@@ -105,136 +103,210 @@ StockFlow-Project/
 ├── services/
 │   ├── venta_service.py
 │   ├── inventario_service.py
-│   └── estadisticas_service.py
+│   ├── estadisticas_service.py
+│   └── catalogo_service.py
+├── scripts/
+│   └── seed_demo.py
 ├── templates/
-│   ├── base.html
-│   ├── productos/
-│   ├── inventario/
-│   ├── ventas/
-│   ├── caja/
-│   ├── estadisticas/
-│   └── catalogo/
 ├── static/
-│   ├── css/
-│   ├── js/
-│   └── img/
 ├── tests/
-└── utils/
+│   ├── test_mvp_integration.py
+│   └── ...
+└── docs/
+    ├── DEVLOG.md
+    └── TESTING_MVP.md
 ```
 
-## Instalación y ejecución
+## Instalación
 
-### Requisitos
+### Windows PowerShell
 
-- Python 3.10 o superior.
-- Git.
+```powershell
+git clone https://github.com/acsel01/StockFlow-Project.git
+cd StockFlow-Project
+git switch develop
 
-### Pasos
+py -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+```
 
-1. Clonar el repositorio y entrar a la carpeta:
-
-   ```bash
-   git clone https://github.com/acsel01/StockFlow-Project.git
-   cd StockFlow-Project
-   git checkout develop
-   ```
-
-2. Crear y activar un entorno virtual:
-
-   En Windows:
-
-   ```powershell
-   py -m venv .venv
-   .venv\Scripts\Activate.ps1
-   ```
-
-   En Linux o macOS:
-
-   ```bash
-   python3 -m venv .venv
-   source .venv/bin/activate
-   ```
-
-3. Instalar dependencias:
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. Ejecutar la aplicación:
-
-   ```bash
-   python app.py
-   ```
-
-5. Abrir `http://127.0.0.1:5000`.
-
-La primera ejecución crea automáticamente `database/stockflow.db` usando `database/schema.sql`. El archivo local de base de datos no se versiona.
-
-### Pruebas
+### Linux o macOS
 
 ```bash
-pytest
+git clone https://github.com/acsel01/StockFlow-Project.git
+cd StockFlow-Project
+git switch develop
+
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
 ```
 
-También está disponible el endpoint `/health` para comprobar que la aplicación responde.
+## Configuración
 
-## Estado del proyecto
+StockFlow reconoce estas variables de entorno:
 
-- **Etapas 1 y 2:** completadas.
-- **Etapa 3 — Investigación de usuarios y mercado:** completada con evidencia real: encuestas separadas a comercios y clientes, entrevistas y análisis de resultados.
-- **Etapa 4 — Alcance y MVP:** validada después de la investigación. El MVP mantiene catálogo informativo y agrega publicación configurable del precio.
-- **Etapas 5 a 14:** documentación funcional, UX/UI, requerimientos, historias, backlog, modelo de datos y arquitectura alineados con el alcance validado.
-- **Etapa 15 — GitHub y control de versiones:** repositorio y base técnica preparados; las ramas feature y Pull Requests se crearán cuando comience trabajo real de desarrollo.
-- **Implementación:** estructura inicial creada; los módulos funcionales todavía se encuentran en el backlog.
+| Variable | Propósito |
+| --- | --- |
+| `STOCKFLOW_SECRET_KEY` | Firma la sesión de Flask. El valor por defecto sirve únicamente para desarrollo local. En cualquier entorno compartido debe configurarse un secreto propio. |
+| `STOCKFLOW_DATABASE` | Permite elegir la ruta de la base SQLite. Si se omite, usa `database/stockflow.db`. |
 
-La documentación diferencia explícitamente entre diseño aprobado e implementación real. StockFlow se presenta como MVP/demo escolar, no como sistema listo para producción comercial.
+No se requiere `.env`. Ejemplo en PowerShell:
 
-## Metodología de trabajo
+```powershell
+$env:STOCKFLOW_SECRET_KEY="cambiar-por-un-secreto-local"
+$env:STOCKFLOW_DATABASE="$PWD\database\stockflow.db"
+```
 
-El equipo utiliza Scrum adaptado al proyecto escolar:
+En Linux o macOS:
 
-1. Los requerimientos se registran como Issues y conforman el backlog.
-2. Las tareas se priorizan y asignan a un sprint.
-3. Cada funcionalidad se desarrolla en una rama `feature/...`.
-4. Los cambios se revisan mediante Pull Request hacia `develop`.
-5. Las pruebas e integración se realizan antes de promover una versión estable a `main`.
-6. Al finalizar el sprint se realiza review y retrospectiva.
+```bash
+export STOCKFLOW_SECRET_KEY="cambiar-por-un-secreto-local"
+export STOCKFLOW_DATABASE="$PWD/database/stockflow.db"
+```
 
-Los Issues deben indicar objetivo, alcance y criterios de finalización. El tablero de tareas refleja los estados Pendiente, En progreso, En prueba y Terminado cuando se configure o actualice en GitHub Projects.
+Cuando la ruta configurada no existe, `create_app()` crea las carpetas necesarias y genera automáticamente las nueve tablas desde `database/schema.sql`. Esto crea el esquema, pero no usuarios reales.
+
+## Datos de demostración opcionales
+
+El seed es una herramienta **SOLO DEMO / DESARROLLO LOCAL**. No se ejecuta al iniciar StockFlow y no modifica `database/stockflow.db` por defecto.
+
+Crear la base separada `database/stockflow_demo.db`:
+
+```powershell
+python scripts/seed_demo.py
+```
+
+La base contiene un comercio activo, dos categorías, cuatro productos con distintos estados de stock/publicación, un ADMIN y un VENDEDOR. Comienza sin Caja abierta para poder demostrar ese paso manualmente.
+
+Credenciales exclusivas de la demo:
+
+```text
+ADMIN
+admin@stockflow.demo
+StockFlow123!
+
+VENDEDOR
+vendedor@stockflow.demo
+StockFlow123!
+```
+
+Las contraseñas se almacenan con hash. Estas credenciales conocidas no deben reutilizarse fuera de la demo local.
+
+El seed rechaza sobrescribir una base existente. Para recrearla de forma explícita:
+
+```powershell
+python scripts/seed_demo.py --reset
+```
+
+También puede elegirse otra ruta:
+
+```powershell
+python scripts/seed_demo.py --database ".\database\mi_demo.db"
+```
+
+Los archivos `database/*.db`, `*.sqlite` y `*.sqlite3` están ignorados por Git.
+
+## Ejecución
+
+### Base local normal
+
+```powershell
+python app.py
+```
+
+### Base demo en Windows PowerShell
+
+```powershell
+$env:STOCKFLOW_DATABASE=(Resolve-Path ".\database\stockflow_demo.db").Path
+$env:STOCKFLOW_SECRET_KEY="secreto-local-para-demo"
+python app.py
+```
+
+### Base demo en Linux o macOS
+
+```bash
+export STOCKFLOW_DATABASE="$PWD/database/stockflow_demo.db"
+export STOCKFLOW_SECRET_KEY="secreto-local-para-demo"
+python app.py
+```
+
+`python app.py` inicia el servidor de desarrollo de Flask con debug para uso local. Abrir:
+
+- aplicación y Catálogo: `http://127.0.0.1:5000/`;
+- login interno: `http://127.0.0.1:5000/login`;
+- selector de Catálogos: `http://127.0.0.1:5000/catalogo`;
+- estado de la aplicación: `http://127.0.0.1:5000/health`.
+
+La raíz redirige al Catálogo público. Después del login, cada usuario accede al Dashboard correspondiente a su rol.
+
+## Pruebas
+
+Con el entorno virtual activo:
+
+```powershell
+python -m pytest -q
+```
+
+La suite del corte del Issue #16 contiene `283` pruebas. Incluye cobertura de base de datos, autenticación, permisos, Productos, Categorías, Inventario, Caja, Ventas, POS, Dashboard, Estadísticas, Catálogo, seed demo y flujos cross-module del MVP.
+
+Compilación adicional usada para la revisión:
+
+```powershell
+python -m compileall -q app.py database routes services scripts tests utils
+```
+
+El registro del alcance automatizado y la checklist visual están en `docs/TESTING_MVP.md`.
+
+## Endpoint de salud
+
+`GET /health` no requiere autenticación y responde:
+
+```json
+{
+  "application": "StockFlow",
+  "status": "ok"
+}
+```
+
+Este endpoint confirma que Flask responde; no reemplaza las pruebas funcionales ni es un sistema de monitoreo productivo.
 
 ## Estrategia de ramas
 
 ```text
 main
 └── develop
-    ├── feature/autenticacion
-    ├── feature/productos
-    ├── feature/inventario
-    ├── feature/punto-venta
-    └── feature/...
+    ├── feature/<funcionalidad>
+    ├── fix/<corrección>
+    ├── test/<integración>
+    └── docs/<documentación>
 ```
 
-- **`main`:** versiones estables y presentables.
-- **`develop`:** integración del trabajo del sprint.
-- **`feature/<nombre>`:** desarrollo aislado de una funcionalidad.
-- **`fix/<nombre>`:** correcciones puntuales.
-- **`docs/<nombre>`:** cambios exclusivamente documentales.
+- `main`: versiones revisadas y presentables;
+- `develop`: integración del trabajo aprobado;
+- `feature/*`: módulos o capacidades funcionales;
+- `fix/*`: correcciones puntuales;
+- `test/*`: pruebas e integración;
+- `docs/*`: documentación viva.
 
-Las ramas de funcionalidad se crean cuando comienza la tarea correspondiente; no se mantienen ramas vacías como evidencia.
+Los cambios se revisan mediante Pull Request hacia `develop`. Una promoción `develop → main` se realiza únicamente después de la revisión de integración, pruebas y validación visual pendiente; este Issue no hace ese merge automáticamente.
 
-## Convención de commits
+## Estado actual
 
-Se utiliza una convención breve basada en Conventional Commits:
+Los módulos definidos para el MVP están implementados e integrados. El proyecto se encuentra en la etapa final de testing y revisión previa a promover `develop` hacia `main`.
 
-| Tipo | Uso | Ejemplo |
-| --- | --- | --- |
-| `feat` | Nueva funcionalidad | `feat: add product management` |
-| `fix` | Corrección de un error | `fix: prevent negative stock` |
-| `docs` | Documentación | `docs: update project README` |
-| `style` | Cambios visuales sin alterar lógica | `style: implement dashboard layout` |
-| `test` | Pruebas | `test: cover sale transaction` |
-| `refactor` | Reorganización interna | `refactor: separate inventory service` |
-| `chore` | Configuración o mantenimiento | `chore: create initial Flask structure` |
+La suite automatizada valida los flujos críticos y la atomicidad. La revisión visual humana de vistas desktop/mobile continúa documentada como requisito pendiente en `docs/TESTING_MVP.md`.
 
-Los mensajes se escriben en imperativo, describen un cambio concreto y evitan textos genéricos como “cambios” o “update”.
+StockFlow sigue siendo un **MVP/demo académico funcional**, no una solución comercial lista para producción.
+
+## Equipo y metodología
+
+| Integrante | Responsabilidad principal |
+| --- | --- |
+| Axel Sosa | Desarrollo e integración |
+| Robert Huyhua | Análisis y documentación |
+| Dilan Amara | Testing y calidad |
+| Natalia Benitez | UX/UI |
+
+El equipo utiliza Scrum adaptado al proyecto escolar: Issues para el backlog, ramas por trabajo, commits convencionales, Pull Requests hacia `develop` y promoción revisada hacia `main`.
