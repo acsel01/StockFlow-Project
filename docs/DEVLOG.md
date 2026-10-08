@@ -66,7 +66,7 @@ La capa de acceso SQLite del Issue #7 quedó implementada, integrada y cubierta 
 
 ### Pendiente
 
-Pull Request #19 abierto hacia `develop`, revisado y pendiente de merge. No se avanzó con otros Issues.
+Pull Request #19 mergeado a `develop` mediante el merge commit `8b5bf53`. El Issue #7 fue cerrado como completado y no queda trabajo pendiente para este Issue.
 
 ## 2026-10-07 — Issue #8: Implementar autenticación, sesiones y permisos
 
