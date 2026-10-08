@@ -568,4 +568,4 @@ El Issue #11 quedó implementado y probado: ambos roles internos pueden preparar
 
 ### Pendiente
 
-El Issue #11 queda listo para revisión. Falta subir `feature/punto-venta` al remoto y abrir el Pull Request hacia `develop`; no se realizó merge ni se cerró el Issue. El Issue #18 continúa abierto para revisión de trazabilidad después del merge.
+Pull Request #25 abierto desde `feature/punto-venta` hacia `develop`, revisado y pendiente de merge. El Issue #11 continúa abierto hasta integrar el PR. El Issue #18 permanece abierto para revisión administrativa y trazabilidad después del merge.
