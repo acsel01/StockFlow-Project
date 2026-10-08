@@ -477,3 +477,95 @@ El Issue #13 quedó implementado y probado: el futuro Punto de Venta dispone de 
 ### Pendiente
 
 Pull Request #24 mergeado a `develop` mediante el merge commit `3dfc6f7`. El Issue #13 fue cerrado como completado y no queda trabajo pendiente para este Issue.
+
+## 2026-10-08 — Issue #11: Implementar Punto de Venta
+
+### Rama
+
+`feature/punto-venta`
+
+### Objetivo
+
+Implementar una interfaz operativa para preparar un carrito y confirmar ventas mediante el servicio transaccional existente, sin duplicar la lógica crítica de Venta, Inventario o Caja.
+
+### Cambios realizados
+
+- Se reemplazó el placeholder de `/punto-venta` por una pantalla POS responsive.
+- ADMIN y VENDEDOR pueden buscar productos activos de su comercio por nombre o código de barras.
+- Se implementó un carrito temporal en sesión con alta, incremento, cambio de cantidad, eliminación y cancelación completa.
+- La pantalla relee Producto e Inventario y calcula subtotales y total en backend en cada solicitud.
+- Se muestra la Caja abierta actual y una advertencia con acceso a Caja cuando no existe una disponible.
+- Se incorporaron los cuatro medios de pago, observaciones y una previsualización no autoritativa del vuelto.
+- La confirmación construye únicamente IDs y cantidades y delega toda la operación a `services.venta_service.confirmar_venta()`.
+- Los errores `VentaError` se muestran con `flash` y conservan íntegro el carrito.
+- Una confirmación exitosa vacía el carrito y redirige al detalle histórico de la Venta creada.
+- Se agregó JavaScript progresivo para pago en efectivo, vuelto estimado, confirmación de cancelación y prevención visual de doble submit.
+- No se modificaron `services/venta_service.py`, `database/schema.sql` ni las tablas de Inventario.
+
+### Archivos creados o modificados
+
+- `routes/ventas.py`
+- `templates/ventas/punto_venta.html`
+- `static/js/app.js`
+- `tests/test_pos.py`
+- `tests/test_sales.py`
+- `docs/DEVLOG.md`
+
+### Funciones o componentes importantes
+
+- `punto_venta()`: carga Caja, carrito, productos actuales, incidencias y total para renderizar el POS.
+- `add_to_cart()`: valida producto, comercio, actividad, cantidad y stock antes de agregar o acumular unidades temporales.
+- `update_cart_quantity()`: actualiza una línea existente sin modificar Inventario.
+- `remove_from_cart()`: elimina de forma segura una línea temporal.
+- `cancel_cart()`: elimina `session["pos_cart"]` sin crear ni modificar datos persistidos.
+- `confirm_pos_sale()`: obtiene la Caja abierta actual, construye items mínimos, llama a `confirmar_venta()` y administra únicamente el resultado de interfaz.
+- `_search_pos_products()`: busca productos activos con Inventario y prioriza una coincidencia exacta de código de barras.
+- `_get_available_pos_product()`: aplica defensa en profundidad al validar producto y comercio en operaciones del carrito.
+- `_load_pos_cart()`: relee precio, stock y estado actuales, calcula importes con `Decimal` y detecta líneas problemáticas.
+- `_get_pos_cart()`: obtiene una copia simple del estado temporal guardado en sesión.
+
+### Decisiones técnicas
+
+- El carrito es temporal porque representa una intención previa a confirmar, no una Venta persistida.
+- `session["user_id"]` conserva la identidad y `session["pos_cart"]` contiene exclusivamente claves de `id_producto` y cantidades enteras. Rol y comercio continúan releyéndose desde DB mediante `g.user`.
+- No se guardan precio, stock, subtotal, total, Caja, comercio, pago ni vuelto en sesión porque todos pueden cambiar o deben validarse desde datos persistidos.
+- Cada modificación reasigna `session["pos_cart"]` para que Flask detecte el cambio de la cookie de sesión.
+- Agregar un producto no reserva existencias. Si cambia el stock, la pantalla lo advierte y `confirmar_venta()` vuelve a validarlo bajo su transacción.
+- El total visible es una previsualización calculada en backend con precios actuales; el total definitivo se recalcula nuevamente dentro de `confirmar_venta()` para evitar confiar en sesión, JavaScript o formularios manipulados.
+- El POS obtiene la Caja abierta mediante `get_open_cash_register()` en cada consulta y confirmación. `id_caja` no se guarda en el carrito porque la Caja puede cerrarse mientras se prepara.
+- Todos los productos se filtran y validan con `g.user["id_comercio"]`; el servicio repite la validación al confirmar como defensa en profundidad.
+- `routes/ventas.py` no inserta Venta o detalles, no actualiza Inventario y no crea movimientos. La transacción continúa perteneciendo exclusivamente a `confirmar_venta()`.
+- Ante `VentaError`, el servicio ya efectuó rollback y la ruta conserva el carrito para que el operador pueda corregirlo.
+- Después del éxito se elimina el carrito, se informa ID, total y vuelto confirmado, y se muestra el detalle histórico.
+- Quitar elimina una línea temporal; cancelar vacía todo el carrito antes de confirmar; ninguno equivale a anular una Venta ya confirmada.
+- La cancelación previa requerida por Issue #11 implementa el comportamiento funcional superpuesto con Issue #18/PB32. El Issue #18 permanece abierto para revisión administrativa y trazabilidad posterior.
+- No existe estado `ANULADA`, devolución, reintegro ni reversión de stock en este alcance.
+- JavaScript mejora la experiencia, pero Caja, stock, precios, importes y pagos se validan siempre en backend.
+
+### Pruebas realizadas
+
+Se ejecutó la suite completa con:
+
+```text
+.venv\Scripts\python.exe -m pytest -q
+```
+
+Resultado: `217 passed`.
+
+Las 36 pruebas nuevas cubren acceso anónimo, ADMIN y VENDEDOR, búsqueda por nombre y código, aislamiento, productos activos, precio de venta y stock visible, carrito mínimo en sesión, altas repetidas, cambio de cantidad, eliminación, validaciones, productos ajenos o inactivos, ausencia de reserva de stock, logout, subtotales y total desde DB, cambios de precio, Caja abierta o ausente, carrito vacío, errores del servicio, stock cambiante, pagos y cancelación repetible sin efectos persistidos.
+
+Una prueba de integración completa autentica a VENDEDOR, agrega y modifica un producto, confirma en efectivo y verifica Venta, DetalleVenta, Inventario, MovimientoInventario, Caja, usuario, vuelto, redirect al detalle y limpieza del carrito. También se actualizó la prueba histórica que exigía mantener el POS como placeholder. Los 181 tests anteriores continúan pasando con ese comportamiento sustituido por el Issue #11.
+
+Se ejecutó además `.venv\Scripts\python.exe -m compileall -q app.py database routes services tests utils`, sin errores.
+
+### Problemas encontrados
+
+La rama local `develop` estaba detrás del merge del Issue #13. Se actualizó mediante `git fetch origin` y `git pull --ff-only origin develop` hasta `3dfc6f7` antes de crear `feature/punto-venta`. La prueba histórica del Issue #13 todavía exigía que `/punto-venta` fuera un placeholder; se actualizó para reflejar el reemplazo intencional de ese comportamiento. No quedaron fallos funcionales pendientes.
+
+### Resultado
+
+El Issue #11 quedó implementado y probado: ambos roles internos pueden preparar, corregir, cancelar y confirmar un carrito usando siempre datos actuales y delegando la Venta atómica al servicio existente.
+
+### Pendiente
+
+El Issue #11 queda listo para revisión. Falta subir `feature/punto-venta` al remoto y abrir el Pull Request hacia `develop`; no se realizó merge ni se cerró el Issue. El Issue #18 continúa abierto para revisión de trazabilidad después del merge.
