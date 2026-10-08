@@ -389,3 +389,91 @@ El Issue #12 quedó implementado y probado: ambos roles internos pueden gestiona
 ### Pendiente
 
 Pull Request #23 mergeado a `develop` mediante el merge commit `fce8528`. El Issue #12 fue cerrado como completado y no queda trabajo pendiente para este Issue.
+
+## 2026-10-08 — Issue #13: Implementar registro e historial de Ventas
+
+### Rama
+
+`feature/ventas`
+
+### Objetivo
+
+Implementar el núcleo transaccional que confirma una Venta completa y permitir que ADMIN y VENDEDOR consulten su historial y detalle, sin implementar todavía la interfaz del Punto de Venta.
+
+### Cambios realizados
+
+- Se reemplazó el `NotImplementedError` de `confirmar_venta()` por el servicio real de confirmación.
+- Se validan dentro de una única transacción el usuario, la Caja, los productos, el comercio, el estado activo, las cantidades, el stock, los precios y el medio de pago.
+- Los productos repetidos en el carrito se normalizan en una sola línea antes de validar existencias.
+- Se calculan con `Decimal` los subtotales, el total y el vuelto a partir de precios releídos desde Producto.
+- Se crean Venta y DetalleVenta, se descuenta Inventario y se registra un MovimientoInventario `VENTA` por cada producto.
+- Se implementó un historial de ventas con filtro opcional por medio de pago y orden reciente primero.
+- Se agregó el detalle histórico con vendedor, Caja, pago, importes, observaciones y productos vendidos.
+- El historial y el detalle se aíslan por el comercio de `g.user`; una venta ajena responde 404.
+- El Punto de Venta permanece como placeholder y no se agregó ningún endpoint provisional para confirmar ventas.
+- No se modificó `database/schema.sql` ni se implementaron carrito, anulación o cancelación.
+
+### Archivos creados o modificados
+
+- `services/venta_service.py`
+- `routes/ventas.py`
+- `templates/ventas/index.html`
+- `templates/ventas/detalle.html`
+- `tests/test_sales.py`
+- `docs/DEVLOG.md`
+
+### Funciones o componentes importantes
+
+- `confirmar_venta()`: posee la transacción completa y confirma Venta, detalles, cambios de stock y movimientos como una unidad atómica.
+- `VentaError`: comunica errores funcionales comprensibles al futuro consumidor del servicio sin depender de Flask.
+- `_get_active_user()`: verifica que el usuario exista, esté activo y aporta su comercio persistido.
+- `_get_valid_cash_register()`: vuelve a comprobar que la Caja exista, siga abierta y pertenezca al comercio del usuario.
+- `_normalize_items()`: valida identificadores y cantidades enteras positivas y combina productos duplicados.
+- `_load_sale_lines()`: relee Producto e Inventario, valida comercio, actividad y stock, y calcula importes desde el precio real.
+- `_validate_payment()` y `_money()`: validan efectivo, calculan vuelto y normalizan dinero a dos decimales.
+- `historial()`: lista ventas del comercio actual con cantidades de productos y unidades.
+- `detail()`: obtiene una venta aislada por comercio y muestra sus líneas con precios históricos.
+
+### Decisiones técnicas
+
+- Venta representa la cabecera comercial y de pago; DetalleVenta conserva cada producto, cantidad, precio unitario y subtotal histórico.
+- `confirmar_venta()` es dueño de una única transacción porque Venta, detalles, Inventario y movimientos deben confirmarse juntos o revertirse por completo.
+- La transacción comienza con `BEGIN IMMEDIATE` para adquirir el bloqueo de escritura antes de releer Caja y existencias, serializando ventas concurrentes en SQLite.
+- Caja se relee al confirmar porque podría haberse cerrado mientras se preparaba el futuro carrito.
+- Stock también se relee después del bloqueo; así dos ventas no pueden consumir simultáneamente las mismas unidades ni dejar existencias negativas.
+- El navegador solo aportará identificadores y cantidades. Precio, subtotal y total se obtienen o calculan en backend y cualquier importe incluido en `items` se ignora.
+- DetalleVenta guarda `precio_unitario` porque una edición posterior del precio del Producto no debe alterar una venta histórica.
+- No se llama a `apply_stock_movement()` porque esa función administra una transacción propia para ajustes manuales. La Venta necesita controlar una sola transacción global sin commits intermedios.
+- Cada MovimientoInventario tiene tipo `VENTA`, delta negativo e `id_venta` no nulo para rastrear exactamente qué operación produjo la salida.
+- El comercio se deriva primero del usuario persistido y se compara con Caja y Producto; nunca se acepta `id_comercio` desde el cliente.
+- Para efectivo, `dinero_recibido` es obligatorio y el vuelto se calcula como recibido menos total. Para débito, crédito y transferencia ambos campos se guardan en `NULL`, aunque el cliente envíe valores.
+- No se implementó anulación posterior porque el esquema actual solo admite ventas `COMPLETADA` y ese comportamiento está fuera del alcance del Issue.
+- El historial usa joins operativos, pero nunca expone precio de compra, costos, márgenes o ganancias a VENDEDOR.
+
+### Pruebas realizadas
+
+Se ejecutó la suite completa con:
+
+```text
+.venv\Scripts\python.exe -m pytest -q
+```
+
+Resultado: `181 passed`.
+
+Las 45 pruebas nuevas cubren ventas simples y múltiples, productos duplicados, carrito vacío, cantidades inválidas, productos inexistentes, ajenos o inactivos, stock insuficiente, usuarios y Cajas inválidos, Caja cerrada antes de confirmar, precio vigente del backend, precio histórico, todos los medios de pago, efectivo insuficiente, vuelto, importes no efectivos en `NULL`, descuento cero, actualización de Inventario y trazabilidad completa del movimiento. También fuerzan un error real al insertar MovimientoInventario y comprueban rollback total, además de ejecutar dos ventas concurrentes por el mismo stock y verificar que no exista sobreventa.
+
+Las pruebas de interfaz cubren permisos, orden, filtro, aislamiento entre comercios, detalle histórico, ausencia de información económica sensible para VENDEDOR y permanencia del Punto de Venta como placeholder. Los 136 tests anteriores continúan pasando.
+
+Se ejecutó además `.venv\Scripts\python.exe -m compileall -q app.py database routes services tests utils`, sin errores.
+
+### Problemas encontrados
+
+La rama local `develop` estaba detrás del merge del Issue #12. Se actualizó mediante `git fetch origin` y `git pull --ff-only origin develop` hasta `fce8528` antes de crear `feature/ventas`. Durante las pruebas, una aserción esperaba un texto distinto al placeholder real del Punto de Venta; se corrigió la prueba para verificar el contenido existente sin modificar el POS. No hubo fallos funcionales pendientes.
+
+### Resultado
+
+El Issue #13 quedó implementado y probado: el futuro Punto de Venta dispone de un servicio único y atómico para confirmar ventas, y ambos roles internos pueden consultar historial y detalle sin acceder a datos de otro comercio ni a costos sensibles.
+
+### Pendiente
+
+El Issue #13 queda listo para revisión. Falta subir `feature/ventas` al remoto y abrir el Pull Request hacia `develop`; no se realizó merge ni se cerró el Issue.
