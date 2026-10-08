@@ -249,7 +249,7 @@ Con el entorno virtual activo:
 python -m pytest -q
 ```
 
-La suite del corte del Issue #16 contiene `283` pruebas. Incluye cobertura de base de datos, autenticación, permisos, Productos, Categorías, Inventario, Caja, Ventas, POS, Dashboard, Estadísticas, Catálogo, seed demo y flujos cross-module del MVP.
+La suite final del Issue #16 obtuvo `296 passed`. Incluye cobertura de base de datos, autenticación, permisos, Productos, Categorías, Inventario, Caja, Ventas, POS, Dashboard, Estadísticas, Catálogo, seed demo, integración cross-module, escenarios negativos, rollback, aislamiento entre comercios, navegación y presentación local de timestamps.
 
 Compilación adicional usada para la revisión:
 
@@ -290,13 +290,13 @@ main
 - `test/*`: pruebas e integración;
 - `docs/*`: documentación viva.
 
-Los cambios se revisan mediante Pull Request hacia `develop`. Una promoción `develop → main` se realiza únicamente después de la revisión de integración, pruebas y validación visual pendiente; este Issue no hace ese merge automáticamente.
+Los cambios se revisan mediante Pull Request hacia `develop`. La integración técnica se incorporó mediante el PR #31, el QA visual y sus correcciones mediante el PR #32, y el cierre documental mediante el PR #33. El Issue #16 está cerrado como `completed`. La promoción `develop → main` permanece como un paso separado y pendiente de aprobación.
 
 ## Estado actual
 
-Los módulos definidos para el MVP están implementados e integrados. El proyecto se encuentra en la etapa final de testing y revisión previa a promover `develop` hacia `main`.
+El MVP académico funcional está implementado e integrado en `develop`. La suite final registra `296 passed`; la validación humana fue aprobada tanto en desktop como en mobile con viewport `390×844`, y la checklist visual quedó completada 16/16. INC-01, INC-02 e INC-03 están resueltas.
 
-La suite automatizada valida los flujos críticos y la atomicidad. La revisión visual humana de vistas desktop/mobile continúa documentada como requisito pendiente en `docs/TESTING_MVP.md`.
+El PR #34 `develop → main` permanece abierto como draft para la revisión pre-main. La promoción todavía no fue aprobada ni integrada a `main`.
 
 StockFlow sigue siendo un **MVP/demo académico funcional**, no una solución comercial lista para producción.
 
