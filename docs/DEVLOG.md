@@ -476,4 +476,4 @@ El Issue #13 quedó implementado y probado: el futuro Punto de Venta dispone de 
 
 ### Pendiente
 
-Pull Request #24 abierto desde `feature/ventas` hacia `develop`, revisado y pendiente de merge. No se avanzó con los Issues #11 ni #18.
+Pull Request #24 mergeado a `develop` mediante el merge commit `3dfc6f7`. El Issue #13 fue cerrado como completado y no queda trabajo pendiente para este Issue.
