@@ -309,4 +309,83 @@ El Issue #10 quedó implementado y probado: ADMIN puede administrar stock con tr
 
 ### Pendiente
 
-Pull Request #22 abierto desde `feature/inventario` hacia `develop`, revisado y pendiente de merge. No se avanzó con el Issue #11.
+Pull Request #22 mergeado a `develop` mediante el merge commit `5287010`. El Issue #10 fue cerrado como completado y no queda trabajo pendiente para este Issue.
+
+## 2026-10-08 — Issue #12: Implementar módulo de Caja
+
+### Rama
+
+`feature/caja`
+
+### Objetivo
+
+Implementar la apertura, consulta y cierre de Caja para ADMIN y VENDEDOR, con aislamiento por comercio, resumen derivado de ventas completadas y operaciones transaccionales seguras.
+
+### Cambios realizados
+
+- Se reemplazó el placeholder de Caja por una pantalla real para apertura, seguimiento y cierre.
+- ADMIN y VENDEDOR pueden consultar Caja, abrirla con un monto inicial y cerrarla con el efectivo contado.
+- Se incorporó un resumen con cantidad de ventas, total vendido, totales por medio de pago y efectivo esperado.
+- Se muestra el último cierre con efectivo esperado, efectivo contado y diferencia derivada como cierre exacto, sobrante o faltante.
+- Se muestran los usuarios de apertura y cierre mediante joins con Usuario.
+- Todas las operaciones se aíslan mediante `g.user["id_comercio"]`; el comercio nunca se recibe desde el navegador.
+- La apertura y el cierre usan transacciones con bloqueo temprano y rollback ante errores de SQLite.
+- No se modificó el esquema ni se implementaron ventas, Punto de Venta o movimientos de Inventario.
+
+### Archivos creados o modificados
+
+- `routes/caja.py`
+- `templates/caja/index.html`
+- `tests/test_cash_register.py`
+- `docs/DEVLOG.md`
+
+### Funciones o componentes importantes
+
+- `index()`: obtiene la Caja del comercio actual y presenta su resumen o el formulario de apertura.
+- `open_cash_register()`: valida el monto inicial, bloquea escrituras con `BEGIN IMMEDIATE`, vuelve a comprobar que no haya otra Caja abierta e inserta la apertura.
+- `close_cash_register()`: valida el efectivo contado, relee la Caja abierta dentro de la transacción y registra usuario, fecha y monto de cierre.
+- `get_open_cash_register()`: consulta reutilizable para obtener la Caja abierta de un comercio; queda disponible para el futuro módulo de Ventas.
+- `get_cash_summary()`: deriva los totales de ventas completadas, el efectivo esperado y la diferencia de cierre.
+- `_get_last_closed_cash_register()`: recupera el último cierre del comercio con los datos de los usuarios responsables.
+- `_parse_non_negative_amount()`: valida montos finitos y mayores o iguales a cero mediante `Decimal`.
+
+### Decisiones técnicas
+
+- Caja representa una jornada operativa del comercio a la que las futuras ventas quedarán vinculadas. Solo puede existir una `ABIERTA` por comercio para que cada venta tenga una jornada activa inequívoca.
+- No se agregó ninguna columna ni tabla porque el esquema actual ya contiene toda la información necesaria en Caja y Venta.
+- `monto_inicial` es el efectivo declarado al abrir, `efectivo_esperado` es el inicial más las ventas en efectivo y `efectivo_contado` es el valor físico declarado al cerrar.
+- El efectivo esperado se calcula como `monto_inicial + SUM(venta.total)` exclusivamente para ventas completadas en efectivo.
+- `dinero_recibido` y `vuelto` no participan del arqueo; tampoco se suman débito, crédito o transferencia al efectivo esperado.
+- Los totales por medio de pago, el efectivo esperado y la diferencia se derivan en cada consulta y no se persisten.
+- La diferencia se calcula como `efectivo_contado - efectivo_esperado`: cero es cierre exacto, un valor positivo es sobrante y uno negativo es faltante.
+- `BEGIN IMMEDIATE` serializa aperturas concurrentes: después de adquirir el bloqueo cada solicitud vuelve a consultar la Caja abierta antes de insertar.
+- El cierre actualiza solamente una Caja `ABIERTA` del comercio autenticado y verifica que exactamente una fila haya cambiado.
+- Una Caja cerrada no se vuelve a modificar; una apertura posterior crea un registro nuevo.
+- Los identificadores de comercio y usuario provienen exclusivamente de `g.user`; así se determina la Caja activa y se evita consultar o cerrar la de otro comercio.
+- Los usuarios de apertura y cierre se registran mediante sus identificadores y sus nombres se obtienen con joins, sin duplicarlos en Caja.
+
+### Pruebas realizadas
+
+Se ejecutó la suite completa con:
+
+```text
+.venv\Scripts\python.exe -m pytest -q
+```
+
+Resultado: `136 passed`.
+
+Las 32 pruebas nuevas cubren autenticación, permisos de ADMIN y VENDEDOR, validaciones, campos de apertura y cierre, una sola Caja abierta por comercio, aperturas independientes entre comercios, aislamiento de consulta y cierre, totales por medio de pago, uso de `venta.total`, efectivo esperado, inmutabilidad, diferencias exacta/positiva/negativa y reutilización de la consulta de Caja abierta. También ejecutan dos aperturas concurrentes y fuerzan fallos reales mediante triggers SQLite para verificar rollback en apertura y cierre.
+
+Se ejecutó además `.venv\Scripts\python.exe -m compileall -q app.py database routes services tests utils`, sin errores.
+
+### Problemas encontrados
+
+La rama local `develop` todavía no contenía el merge del Issue #10. Se actualizó con `git fetch origin` y `git pull --ff-only origin develop` hasta el merge commit `5287010` antes de crear esta rama. El primer intento de ejecutar las pruebas usó el Python global, que no tenía `pytest`; se repitió con el intérprete de `.venv` y la suite completa pasó.
+
+### Resultado
+
+El Issue #12 quedó implementado y probado: ambos roles internos pueden gestionar la Caja de su comercio, los importes se derivan de las ventas completadas correctas y las transacciones evitan aperturas duplicadas o estados parciales ante errores.
+
+### Pendiente
+
+Pull Request #23 abierto desde `feature/caja` hacia `develop`, revisado y pendiente de merge. No se avanzó con los Issues #13 ni #11.
