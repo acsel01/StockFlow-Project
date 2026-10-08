@@ -568,4 +568,42 @@ El Issue #11 quedó implementado y probado: ambos roles internos pueden preparar
 
 ### Pendiente
 
-Pull Request #25 abierto desde `feature/punto-venta` hacia `develop`, revisado y pendiente de merge. El Issue #11 continúa abierto hasta integrar el PR. El Issue #18 permanece abierto para revisión administrativa y trazabilidad después del merge.
+Pull Request #25 mergeado a `develop` mediante el merge commit `22cd577`. El Issue #11 fue cerrado como completado y no queda trabajo pendiente para este Issue. La cancelación previa integrada en este mismo flujo también permitió resolver funcionalmente el Issue #18.
+
+## 2026-10-08 — Issue #18: Cancelar venta antes de confirmar
+
+### Implementación real
+
+La funcionalidad de este Issue quedó implementada dentro de `feature/punto-venta` y fue integrada mediante el Pull Request #25, por lo que no se creó una rama `feature/cancelar-venta` separada.
+
+La acción `POST /punto-venta/cancelar` elimina únicamente `session["pos_cart"]`. No crea `Venta`, `DetalleVenta` ni `MovimientoInventario`, y no modifica `Inventario` ni `Caja`. La interfaz solicita confirmación visual antes de vaciar un carrito con productos.
+
+### Trazabilidad
+
+La trazabilidad operativa queda registrada como:
+
+`RF12 · PB32`
+
+La referencia anterior a `HU12` se retiró del Issue #18 porque existe una inconsistencia en la documentación histórica: en Etapa 8 v1.1, HU12 corresponde a apertura y cierre de Caja, mientras que RF12 y PB32 describen cancelar una venta antes de confirmarla. Las versiones históricas no se reescriben retroactivamente; la corrección queda documentada en GitHub y en este registro de desarrollo.
+
+### Pruebas y evidencia
+
+La prueba `test_cancel_cart_is_repeatable_and_never_changes_database()` verifica que:
+
+- un carrito con productos puede cancelarse;
+- el carrito queda vacío;
+- repetir la cancelación no produce inconsistencias;
+- no se crea ninguna Venta ni DetalleVenta;
+- no se crea MovimientoInventario;
+- el stock permanece igual;
+- la Caja permanece sin cambios.
+
+No se agregaron pruebas nuevas para cerrar administrativamente este Issue. La evidencia corresponde a la suite del Issue #11, que finalizó con `217 passed`.
+
+### Resultado
+
+El comportamiento solicitado por RF12/PB32 quedó implementado, probado e integrado mediante el Punto de Venta. El Issue #18 fue cerrado como completado sin introducir una rama o implementación duplicada.
+
+### Pendiente
+
+No queda trabajo funcional pendiente para el Issue #18.
