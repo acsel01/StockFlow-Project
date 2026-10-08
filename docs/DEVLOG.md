@@ -67,3 +67,82 @@ La capa de acceso SQLite del Issue #7 quedó implementada, integrada y cubierta 
 ### Pendiente
 
 Pull Request #19 abierto hacia `develop`, revisado y pendiente de merge. No se avanzó con otros Issues.
+
+## 2026-10-07 — Issue #8: Implementar autenticación, sesiones y permisos
+
+### Rama
+
+`feature/autenticacion`
+
+### Objetivo
+
+Permitir que administradores y vendedores inicien y cierren sesión de forma segura, y limitar las rutas internas de acuerdo con su rol sin agregar gestión de usuarios ni módulos funcionales.
+
+### Cambios realizados
+
+- Se implementó el formulario de login con búsqueda por email y verificación del hash de contraseña.
+- Se agregó una sesión de Flask que guarda únicamente `user_id`.
+- Se incorporó la carga del usuario actual en `g.user` antes de cada request.
+- Se implementó logout por `POST` y limpieza completa de la sesión.
+- Se agregaron decoradores para exigir autenticación o el rol `ADMIN`.
+- Se protegieron las rutas internas y se mantuvo `/catalogo` como ruta pública.
+- Se creó una plantilla específica de login y un acceso de cierre de sesión en la barra de navegación.
+- Se agregaron usuarios ADMIN, VENDEDOR e INACTIVO exclusivamente dentro de fixtures de prueba y con contraseñas hasheadas.
+
+### Archivos creados o modificados
+
+- `routes/auth.py`
+- `routes/caja.py`
+- `routes/dashboard.py`
+- `routes/estadisticas.py`
+- `routes/inventario.py`
+- `routes/productos.py`
+- `routes/ventas.py`
+- `templates/base.html`
+- `templates/auth/login.html`
+- `tests/test_auth.py`
+- `docs/DEVLOG.md`
+
+### Funciones o componentes importantes
+
+- `login()`: procesa `GET /login` y `POST /login`, comprueba que el usuario esté activo y valida la contraseña con `check_password_hash()`.
+- `logout()`: atiende `POST /logout`, limpia la sesión y redirige al login.
+- `load_logged_in_user()`: obtiene `session["user_id"]`, consulta el usuario en SQLite y lo expone como `g.user`; también invalida sesiones de usuarios inexistentes o inactivos.
+- `login_required`: redirige a `/login` cuando no existe un usuario autenticado.
+- `role_required(role)`: redirige usuarios anónimos y responde `403 Forbidden` cuando el usuario autenticado no tiene el rol requerido.
+
+### Decisiones técnicas
+
+- Se usaron las sesiones firmadas de Flask porque permiten conservar la identidad entre requests sin incorporar una librería externa.
+- La sesión guarda solamente `user_id`; no contiene contraseña, hash, rol ni otros datos sensibles. El rol actual se consulta desde la base en cada request.
+- Se usó `g.user` para que todas las rutas de un mismo request compartan el usuario cargado sin repetir consultas.
+- Las contraseñas se verifican con el hash de Werkzeug y nunca se comparan ni almacenan en texto plano.
+- `ADMIN` puede acceder a Productos y Estadísticas; `VENDEDOR` recibe `403` en esas rutas, pero puede usar las rutas operativas protegidas.
+- Catálogo sigue público porque el rol CLIENTE no tiene cuenta ni inicia sesión en el MVP.
+- La lógica quedó concentrada en `routes/auth.py`; no fue necesario agregar autenticación a `app.py` ni incorporar nuevas dependencias.
+
+### Pruebas realizadas
+
+Se ejecutó la suite completa con:
+
+```text
+.venv\Scripts\python -m pytest -q
+```
+
+Resultado: `31 passed`.
+
+Las pruebas cubren login correcto de ADMIN y VENDEDOR, contraseña incorrecta, usuario inexistente, usuario inactivo, logout, contenido mínimo de la sesión, acceso anónimo, permisos de ambos roles y acceso público al Catálogo. También se mantuvieron pasando las pruebas del Issue #7 y la prueba de salud.
+
+Se ejecutó además `python -m compileall` sobre la aplicación y las pruebas, sin errores.
+
+### Problemas encontrados
+
+La referencia local de `develop` todavía no contenía el merge del Issue #7. Se ejecutó `git fetch origin`, se creó la rama local `develop` siguiendo `origin/develop` y se verificó con `git pull --ff-only` que quedara actualizada antes de crear esta rama. No hubo fallos funcionales durante la implementación.
+
+### Resultado
+
+El Issue #8 quedó implementado y cubierto por pruebas: los usuarios activos pueden autenticarse, la sesión se reconstruye de forma segura y las rutas aplican la matriz de permisos definida para ADMIN, VENDEDOR y CLIENTE.
+
+### Pendiente
+
+Revisión local, push de `feature/autenticacion` y posterior Pull Request hacia `develop`. No se realizó merge ni se avanzó con otros Issues.
