@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Movimientos de Inventario | StockFlow{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+  <div>
+    <span class="badge text-bg-success mb-2">Trazabilidad</span>
+    <h1 class="h2 mb-1">Movimientos de Inventario</h1>
+    <p class="text-secondary mb-0">Historial administrativo ordenado desde el cambio más reciente.</p>
+  </div>
+  <a class="btn btn-outline-secondary" href="{{ url_for('inventario.index') }}">Volver a Inventario</a>
+</div>
+
+<form class="card border-0 shadow-sm mb-4" method="get">
+  <div class="card-body d-flex flex-column flex-lg-row gap-2">
+    <label class="visually-hidden" for="q">Buscar producto</label>
+    <input
+      class="form-control"
+      id="q"
+      name="q"
+      type="search"
+      value="{{ search }}"
+      placeholder="Buscar producto o código"
+    >
+    <label class="visually-hidden" for="tipo">Tipo</label>
+    <select class="form-select" id="tipo" name="tipo">
+      <option value="">Todos los tipos</option>
+      {% for movement_type in movement_types %}
+        <option value="{{ movement_type }}" {% if selected_type == movement_type %}selected{% endif %}>
+          {{ movement_type|replace('_', ' ')|title }}
+        </option>
+      {% endfor %}
+    </select>
+    <button class="btn btn-dark" type="submit">Filtrar</button>
+    {% if search or selected_type %}
+      <a class="btn btn-outline-secondary" href="{{ url_for('inventario.movements') }}">Limpiar</a>
+    {% endif %}
+  </div>
+</form>
+
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Fecha</th>
+          <th>Producto</th>
+          <th>Tipo</th>
+          <th>Delta</th>
+          <th>Anterior</th>
+          <th>Resultante</th>
+          <th>Motivo</th>
+          <th>Usuario</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for movement in movements %}
+          <tr>
+            <td class="text-nowrap">{{ movement["fecha_hora"] }}</td>
+            <td>{{ movement["producto_nombre"] }}</td>
+            <td>{{ movement["tipo"]|replace('_', ' ')|title }}</td>
+            <td class="fw-semibold {{ 'text-success' if movement['cantidad_delta'] > 0 else 'text-danger' }}">
+              {{ "%+d"|format(movement["cantidad_delta"]) }}
+            </td>
+            <td>{{ movement["stock_anterior"] }}</td>
+            <td>{{ movement["stock_resultante"] }}</td>
+            <td>{{ movement["motivo"] or "—" }}</td>
+            <td>
+              {{ movement["usuario_nombre"] }}{% if movement["usuario_apellido"] %} {{ movement["usuario_apellido"] }}{% endif %}
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td class="text-center text-secondary py-5" colspan="8">No hay movimientos para mostrar.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
