@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Estadísticas | StockFlow{% endblock %}
+
+{% block content %}
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+      <p class="text-uppercase text-secondary small fw-semibold mb-1">RF14 · HU14 · PB19-PB20</p>
+      <h1 class="h2 mb-1">Estadísticas</h1>
+      <p class="text-secondary mb-0">{{ period.label }}</p>
+    </div>
+    <a class="btn btn-outline-secondary" href="{{ url_for('dashboard.index') }}">Volver al Dashboard</a>
+  </div>
+
+  <section class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <div class="d-flex flex-wrap gap-2 mb-3">
+        {% for key, label in [("hoy", "Hoy"), ("7d", "7 días"), ("30d", "30 días"), ("mes", "Mes"), ("todo", "Todo")] %}
+          <a class="btn {{ 'btn-dark' if period.key == key else 'btn-outline-dark' }}" href="{{ url_for('estadisticas.index', periodo=key) }}">{{ label }}</a>
+        {% endfor %}
+      </div>
+      <form class="row g-2 align-items-end" method="get">
+        <input type="hidden" name="periodo" value="personalizado">
+        <div class="col-md-4">
+          <label class="form-label" for="desde">Desde</label>
+          <input class="form-control" id="desde" name="desde" type="date" value="{{ period.date_from.isoformat() if period.key == 'personalizado' else '' }}" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="hasta">Hasta</label>
+          <input class="form-control" id="hasta" name="hasta" type="date" value="{{ period.date_to.isoformat() if period.key == 'personalizado' else '' }}" required>
+        </div>
+        <div class="col-md-4"><button class="btn btn-primary w-100" type="submit">Aplicar período</button></div>
+      </form>
+    </div>
+  </section>
+
+  <section class="row g-3 mb-4" aria-label="Indicadores del período">
+    {% set cards = [
+      ("Total vendido", "$ " ~ "%.2f"|format(summary.total_sold)),
+      ("Cantidad de ventas", summary.sale_count),
+      ("Ticket promedio", "$ " ~ "%.2f"|format(summary.average_ticket)),
+      ("Unidades vendidas", summary.units_sold),
+      ("Ganancia bruta estimada", "$ " ~ "%.2f"|format(estimated_profit))
+    ] %}
+    {% for label, value in cards %}
+      <div class="col-sm-6 col-xl">
+        <div class="card border-0 shadow-sm h-100"><div class="card-body">
+          <div class="text-secondary small">{{ label }}</div>
+          <div class="fs-4 fw-semibold">{{ value }}</div>
+        </div></div>
+      </div>
+    {% endfor %}
+  </section>
+  <p class="text-secondary small mb-4">La ganancia es estimada utilizando el costo de compra actual de cada producto.</p>
+
+  <div class="row g-4 mb-4">
+    <div class="col-lg-6">
+      <section class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <h2 class="h5">Ventas por día</h2>
+          <canvas id="daily-sales-chart" aria-label="Gráfico de ventas por día"></canvas>
+        </div>
+      </section>
+    </div>
+    <div class="col-lg-6">
+      <section class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <h2 class="h5">Productos más vendidos</h2>
+          <canvas id="top-products-chart" aria-label="Gráfico de productos más vendidos"></canvas>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-lg-6">
+      <section class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-white py-3"><h2 class="h5 mb-0">Top 5 por unidades</h2></div>
+        <div class="table-responsive"><table class="table mb-0">
+          <thead><tr><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Total histórico</th></tr></thead>
+          <tbody>
+            {% for product in top_selling_products %}
+              <tr><td>{{ product.product_name }}</td><td class="text-end">{{ product.units_sold }}</td><td class="text-end">$ {{ "%.2f"|format(product.total_sold) }}</td></tr>
+            {% else %}
+              <tr><td class="text-center text-secondary py-4" colspan="3">Todavía no hay ventas en este período.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table></div>
+      </section>
+    </div>
+    <div class="col-lg-6">
+      <section class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-white py-3"><h2 class="h5 mb-0">Top 5 por ganancia estimada</h2></div>
+        <div class="table-responsive"><table class="table mb-0">
+          <thead><tr><th>Producto</th><th class="text-end">Vendido</th><th class="text-end">Ganancia estimada</th></tr></thead>
+          <tbody>
+            {% for product in top_profitable_products %}
+              <tr><td>{{ product.product_name }}</td><td class="text-end">$ {{ "%.2f"|format(product.total_sold) }}</td><td class="text-end">$ {{ "%.2f"|format(product.estimated_profit) }}</td></tr>
+            {% else %}
+              <tr><td class="text-center text-secondary py-4" colspan="3">Todavía no hay ventas en este período.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table></div>
+      </section>
+    </div>
+  </div>
+
+  <section class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3">
+      <h2 class="h5 mb-1">Stock bajo actual</h2>
+      <p class="text-secondary small mb-0">Estado actual del Inventario; no depende del período de ventas.</p>
+    </div>
+    <div class="table-responsive"><table class="table mb-0">
+      <thead><tr><th>Producto</th><th>Código</th><th class="text-end">Stock actual</th><th class="text-end">Stock mínimo</th></tr></thead>
+      <tbody>
+        {% for product in low_stock_products %}
+          <tr><td>{{ product.product_name }}</td><td>{{ product.codigo_barras or "—" }}</td><td class="text-end">{{ product.current_stock }}</td><td class="text-end">{{ product.minimum_stock }}</td></tr>
+        {% else %}
+          <tr><td class="text-center text-secondary py-4" colspan="4">No hay productos con stock bajo.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+  </section>
+
+  <script id="statistics-chart-data" type="application/json">{{ chart_data | tojson }}</script>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/estadisticas.js') }}"></script>
+{% endblock %}

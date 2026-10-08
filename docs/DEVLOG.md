@@ -607,3 +607,97 @@ El comportamiento solicitado por RF12/PB32 quedó implementado, probado e integr
 ### Pendiente
 
 No queda trabajo funcional pendiente para el Issue #18.
+
+## 2026-10-08 — Issue #14: Implementar Dashboard y Estadísticas
+
+### Rama
+
+`feature/estadisticas`
+
+### Objetivo
+
+Implementar un Dashboard operativo por rol y una vista analítica exclusiva de ADMIN, calculando todas las métricas desde Ventas, DetalleVenta, Producto, Inventario y Caja existentes.
+
+### Cambios realizados
+
+- Se reemplazó el placeholder de Dashboard por un resumen responsive diferenciado para ADMIN y VENDEDOR.
+- ADMIN visualiza ventas, cantidad y ticket promedio del día, estado de Caja, stock bajo y accesos administrativos.
+- VENDEDOR visualiza la Caja actual, sus ventas acumuladas, stock bajo y accesos operativos sin información de costos o rentabilidad.
+- Se reemplazó el placeholder de Estadísticas por una vista ADMIN con KPIs, rankings, stock bajo actual y gráficos.
+- Se implementaron filtros para hoy, 7 días, 30 días, mes actual, todo el historial y período personalizado.
+- Se agregaron agregaciones reutilizables para resumen comercial, ventas diarias, productos más vendidos, ganancia estimada, productos más rentables y stock bajo.
+- Se incorporaron gráficos Chart.js de ventas por día y productos más vendidos, alimentados con JSON seguro calculado en backend.
+- Los conjuntos sin ventas muestran importes en cero, rankings vacíos y estados de gráfico sin datos.
+- Todas las consultas están aisladas por comercio y consideran explícitamente solo ventas `COMPLETADA`.
+- No se crearon tablas, no se persistieron KPIs y no se modificaron datos operativos.
+
+### Archivos creados o modificados
+
+- `services/estadisticas_service.py`
+- `routes/dashboard.py`
+- `routes/estadisticas.py`
+- `templates/dashboard/index.html`
+- `templates/estadisticas/index.html`
+- `templates/base.html`
+- `static/js/estadisticas.js`
+- `tests/test_statistics.py`
+- `docs/DEVLOG.md`
+
+### Funciones o componentes importantes
+
+- `resolve_period()`: valida el período y produce límites inclusivos para fechas de Venta.
+- `get_sales_summary()`: calcula total vendido, cantidad de ventas, ticket promedio y unidades vendidas.
+- `get_daily_sales()`: agrupa ventas completadas por fecha para tabla y gráfico.
+- `get_top_selling_products()`: obtiene el Top 5 por unidades usando DetalleVenta histórico.
+- `get_estimated_profit()`: calcula la ganancia bruta estimada con subtotales históricos y costo actual.
+- `get_top_profitable_products()`: genera el Top 5 por ganancia estimada.
+- `get_low_stock_products()`: consulta el estado actual de productos activos cuyo stock no supera el mínimo.
+- `get_cash_register_sales_summary()`: resume las ventas completadas de la Caja actual para VENDEDOR.
+- `dashboard.index()`: selecciona únicamente los datos necesarios según el rol autenticado.
+- `estadisticas.index()`: valida filtros, solicita agregaciones y prepara datos seguros para los gráficos.
+
+### Decisiones técnicas
+
+- Dashboard y Estadísticas son vistas derivadas; no tienen tablas propias porque cada dato se registra una sola vez y luego se reutiliza.
+- Dashboard es un resumen operativo breve. Estadísticas es la vista analítica detallada de ADMIN y no se duplica dentro del Dashboard.
+- ADMIN recibe métricas globales de su comercio; VENDEDOR recibe solo información operativa de la Caja actual y stock, sin ejecutar consultas de ganancia.
+- VENDEDOR no ve costos, margen, ganancia o rentabilidad porque son datos económicos exclusivos del rol administrador.
+- Las ventas se aíslan mediante `Venta JOIN Caja` y `Caja.id_comercio`; Inventario se aísla mediante `Producto.id_comercio`.
+- El total vendido usa `SUM(Venta.total)` porque representa el importe histórico confirmado, incluso si en el futuro existen descuentos.
+- Los rankings usan cantidad y subtotal de DetalleVenta, por lo que cambiar `Producto.precio_venta` no reescribe los ingresos históricos.
+- Ticket promedio es total vendido dividido por cantidad de ventas; cuando no hay ventas devuelve `0.00`.
+- Stock bajo actual significa `stock_actual <= stock_minimo` para productos activos e incluye agotados. No depende del filtro histórico de ventas.
+- Los períodos usan `DATE(venta.fecha_hora)` con límites inclusivos coherentes. El valor por defecto y el fallback ante filtros inválidos son los últimos 30 días incluyendo hoy.
+- Los importes agregados se convierten a `Decimal` y se normalizan a dos decimales en backend.
+- Las ventas históricas de productos hoy inactivos permanecen en métricas y rankings; solo el stock bajo actual excluye productos inactivos.
+- La métrica se llama “Ganancia bruta estimada” porque DetalleVenta no conserva costo histórico. Usa el subtotal histórico menos `Producto.precio_compra` actual por unidad.
+- Si cambia el precio de compra actual, cambia la estimación histórica. Es una limitación consciente del modelo MVP y no una ganancia contable exacta.
+- Chart.js solo representa arrays ya calculados por Flask; no calcula métricas ni aplica reglas de negocio.
+- Dashboard y Estadísticas ejecutan únicamente `SELECT`; no realizan commits ni modifican Venta, DetalleVenta, Producto, Inventario, Caja o movimientos.
+- La trazabilidad de Estadísticas corresponde a `RF14 · HU14 · PB19-PB20`. Dashboard se documenta como vista integradora sin inventar un RF/HU nuevo.
+
+### Pruebas realizadas
+
+Se ejecutó la suite completa con:
+
+```text
+.venv\Scripts\python.exe -m pytest -q
+```
+
+Resultado: `248 passed`.
+
+Las 31 pruebas nuevas cubren autenticación, permisos ADMIN/VENDEDOR, Dashboard de ambos roles, métricas diarias, Caja, stock bajo, ausencia de información sensible, KPIs, rankings, precio histórico, producto inactivo histórico, costo actual, ganancia estimada, series diarias, datos para gráficos, períodos estándar, mes, todo, personalizado inclusivo, filtros inválidos, aislamiento entre dos comercios, comercio sin ventas y garantía de solo lectura.
+
+Se ejecutó además `.venv\Scripts\python.exe -m compileall -q app.py database routes services tests utils`, sin errores.
+
+### Problemas encontrados
+
+La rama local `develop` estaba detrás de la integración y cierre documental de los Issues #11 y #18. Se actualizó mediante `git fetch origin` y `git pull --ff-only origin develop` hasta el commit exacto `428c76937bebebb7216faa87ac0008609b2823e3` antes de crear `feature/estadisticas`. La implementación y las pruebas no presentaron fallos funcionales pendientes.
+
+### Resultado
+
+El Issue #14 quedó implementado y probado: Dashboard reutiliza información operativa según el rol y Estadísticas ofrece análisis aislado por comercio sin persistir métricas ni alterar los módulos existentes.
+
+### Pendiente
+
+El Issue #14 queda listo para revisión. Falta subir `feature/estadisticas` al remoto y abrir el Pull Request hacia `develop`; no se realizó merge ni se cerró el Issue.
