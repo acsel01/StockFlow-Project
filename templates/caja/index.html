@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Caja | StockFlow{% endblock %}
+
+{% block content %}
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+      <p class="text-uppercase text-secondary small fw-semibold mb-1">Operación diaria</p>
+      <h1 class="h2 mb-0">Caja</h1>
+    </div>
+    {% if open_cash_register %}
+      <span class="badge text-bg-success fs-6">ABIERTA</span>
+    {% else %}
+      <span class="badge text-bg-secondary fs-6">Sin caja abierta</span>
+    {% endif %}
+  </div>
+
+  {% if open_cash_register %}
+    <div class="row g-4">
+      <div class="col-lg-8">
+        <section class="card shadow-sm h-100">
+          <div class="card-body">
+            <h2 class="h5">Resumen de la caja</h2>
+            <p class="text-secondary mb-4">
+              Abierta el {{ open_cash_register.fecha_apertura }} por
+              {{ open_cash_register.apertura_nombre }}
+              {{ open_cash_register.apertura_apellido or "" }}.
+            </p>
+            <div class="row g-3">
+              <div class="col-sm-6 col-xl-4">
+                <div class="border rounded p-3 h-100">
+                  <div class="text-secondary small">Monto inicial</div>
+                  <div class="fs-4 fw-semibold">$ {{ "%.2f"|format(open_cash_register.monto_inicial) }}</div>
+                </div>
+              </div>
+              <div class="col-sm-6 col-xl-4">
+                <div class="border rounded p-3 h-100">
+                  <div class="text-secondary small">Ventas completadas</div>
+                  <div class="fs-4 fw-semibold">{{ open_summary.cantidad_ventas }}</div>
+                </div>
+              </div>
+              <div class="col-sm-6 col-xl-4">
+                <div class="border rounded p-3 h-100">
+                  <div class="text-secondary small">Total vendido</div>
+                  <div class="fs-4 fw-semibold">$ {{ "%.2f"|format(open_summary.total_vendido) }}</div>
+                </div>
+              </div>
+              <div class="col-sm-6 col-xl-4">
+                <div class="border rounded p-3 h-100">
+                  <div class="text-secondary small">Efectivo</div>
+                  <div class="fw-semibold">$ {{ "%.2f"|format(open_summary.total_efectivo) }}</div>
+                </div>
+              </div>
+              <div class="col-sm-6 col-xl-4">
+                <div class="border rounded p-3 h-100">
+                  <div class="text-secondary small">Débito / Crédito</div>
+                  <div class="fw-semibold">
+                    $ {{ "%.2f"|format(open_summary.total_debito) }} /
+                    $ {{ "%.2f"|format(open_summary.total_credito) }}
+                  </div>
+                </div>
+              </div>
+              <div class="col-sm-6 col-xl-4">
+                <div class="border rounded p-3 h-100">
+                  <div class="text-secondary small">Transferencia</div>
+                  <div class="fw-semibold">$ {{ "%.2f"|format(open_summary.total_transferencia) }}</div>
+                </div>
+              </div>
+            </div>
+            <div class="alert alert-primary mt-4 mb-0">
+              <span class="d-block small">Efectivo esperado</span>
+              <strong class="fs-4">$ {{ "%.2f"|format(open_summary.efectivo_esperado) }}</strong>
+            </div>
+          </div>
+        </section>
+      </div>
+      <div class="col-lg-4">
+        <section class="card shadow-sm">
+          <div class="card-body">
+            <h2 class="h5">Cerrar caja</h2>
+            <p class="text-secondary small">Ingresá el efectivo contado al finalizar el turno.</p>
+            <form action="{{ url_for('caja.close_cash_register') }}" method="post">
+              <label class="form-label" for="efectivo_contado">Efectivo contado</label>
+              <div class="input-group mb-3">
+                <span class="input-group-text">$</span>
+                <input class="form-control" id="efectivo_contado" name="efectivo_contado" type="number" min="0" step="0.01" required>
+              </div>
+              <button class="btn btn-danger w-100" type="submit">Cerrar caja</button>
+            </form>
+          </div>
+        </section>
+      </div>
+    </div>
+  {% else %}
+    <div class="row g-4">
+      <div class="col-lg-6">
+        <section class="card shadow-sm">
+          <div class="card-body p-4">
+            <h2 class="h5">Abrir una nueva caja</h2>
+            <p class="text-secondary">Indicá el efectivo disponible al comenzar el turno.</p>
+            <form action="{{ url_for('caja.open_cash_register') }}" method="post">
+              <label class="form-label" for="monto_inicial">Monto inicial</label>
+              <div class="input-group mb-3">
+                <span class="input-group-text">$</span>
+                <input class="form-control" id="monto_inicial" name="monto_inicial" type="number" min="0" step="0.01" required autofocus>
+              </div>
+              <button class="btn btn-primary" type="submit">Abrir caja</button>
+            </form>
+          </div>
+        </section>
+      </div>
+
+      {% if last_closed_cash_register %}
+        <div class="col-lg-6">
+          <section class="card shadow-sm">
+            <div class="card-body p-4">
+              <h2 class="h5">Último cierre</h2>
+              <p class="text-secondary small">
+                Cerrada el {{ last_closed_cash_register.fecha_cierre }} por
+                {{ last_closed_cash_register.cierre_nombre }}
+                {{ last_closed_cash_register.cierre_apellido or "" }}.
+              </p>
+              <dl class="row mb-0">
+                <dt class="col-7">Efectivo esperado</dt>
+                <dd class="col-5 text-end">$ {{ "%.2f"|format(last_closed_summary.efectivo_esperado) }}</dd>
+                <dt class="col-7">Efectivo contado</dt>
+                <dd class="col-5 text-end">$ {{ "%.2f"|format(last_closed_cash_register.efectivo_contado) }}</dd>
+                <dt class="col-7">Diferencia</dt>
+                <dd class="col-5 text-end fw-semibold">$ {{ "%+.2f"|format(last_closed_summary.diferencia) }}</dd>
+              </dl>
+              {% if last_closed_summary.diferencia == 0 %}
+                <div class="alert alert-success mt-3 mb-0">Cierre exacto</div>
+              {% elif last_closed_summary.diferencia > 0 %}
+                <div class="alert alert-warning mt-3 mb-0">Sobrante de efectivo</div>
+              {% else %}
+                <div class="alert alert-danger mt-3 mb-0">Faltante de efectivo</div>
+              {% endif %}
+            </div>
+          </section>
+        </div>
+      {% endif %}
+    </div>
+  {% endif %}
+{% endblock %}
