@@ -841,6 +841,7 @@ Validar como conjunto el MVP ya implementado, agregar evidencia cross-module de 
 - Se auditó deuda y rutas. El template placeholder no tenía referencias activas y fue eliminado.
 - Durante la review se corrigió la clasificación diaria de Ventas para convertir el timestamp UTC persistido a fecha local antes de filtrar o agrupar Estadísticas.
 - Después del merge del PR #31, la validación humana detectó INC-02: el shell visual y la navegación no representaban la interfaz definida para Etapa 12. La corrección se trabajó en `fix/ui-etapa12` desde `develop` en `665c8e147305cc0dcd1b41563a4bafdaf0a3c743`.
+- La segunda revisión visual desktop aprobó en general el shell y señaló tres ajustes de polish: centrar Login, ampliar inputs numéricos comprimidos y convertir a hora local los timestamps UTC mostrados al usuario.
 
 ### Archivos creados o modificados
 
@@ -912,6 +913,16 @@ La resolución incorporó un shell autenticado compartido con sidebar fijo en de
 
 Se agregaron seis pruebas en `tests/test_ui_navigation.py` para la estructura ADMIN/VENDEDOR, persistencia del menú, separación pública y `aria-current="page"`. No se modificaron rutas, servicios, consultas SQL, esquema, sesiones ni reglas de autorización.
 
+#### INC-03 — Timestamps UTC mostrados en interfaz
+
+La segunda revisión desktop observó que Caja mostraba directamente `fecha_apertura` almacenada por SQLite en UTC. La auditoría encontró el mismo patrón en Dashboard, último cierre de Caja, Historial y detalle de Ventas, y Movimientos de Inventario. No se exponía `ultima_actualizacion`.
+
+Se agregó `utils/datetime_utils.py` con `format_local_datetime()`, registrado como filtro Jinja `local_datetime`. Los strings SQLite sin zona se interpretan como UTC y se convierten mediante `astimezone()` a la zona local del equipo, sin hardcodear país u offset; se presentan como `dd/mm/aaaa hh:mm`. `None` y vacío se muestran vacíos, y un valor no interpretable conserva su representación original para evitar un 500 sin ocultar el dato problemático.
+
+La persistencia continúa usando UTC y no se modificaron schema, datos, transacciones ni consultas de negocio. La corrección SQL `DATE(v.fecha_hora, 'localtime')` de Estadísticas permanece intacta porque resuelve clasificación diaria, mientras el filtro nuevo resuelve únicamente presentación textual.
+
+En el mismo polish se centró el panel de Login con grid y ancho controlado, se agregó ancho estable al stock mínimo de Inventario y se reforzó `.sf-quantity-input` en búsqueda y carrito del POS. Siete pruebas nuevas cubren utilidad, fallbacks, páginas afectadas y clases estructurales.
+
 ### Decisiones técnicas
 
 - #16 agrega evidencia de integración, no un módulo nuevo, porque todas las capacidades de negocio del MVP ya estaban implementadas.
@@ -919,10 +930,10 @@ Se agregaron seis pruebas en `tests/test_ui_navigation.py` para la estructura AD
 - La atomicidad se demuestra con la prueba existente de fallo profundo y con nuevos negativos que verifican ausencia de persistencia parcial.
 - El aislamiento se verifica con dos comercios y snapshots de stock, Caja y Ventas, además de consultas separadas de Dashboard, Estadísticas y Catálogo.
 - El efecto Venta → Catálogo se comprueba recargando la ruta pública después del descuento real de Inventario; no se almacena disponibilidad.
-- Los timestamps de Venta permanecen almacenados en UTC. Solo las consultas por día calendario aplican `localtime`, alineándose con `date.today()` usado por Dashboard y la resolución de períodos.
+- Los timestamps permanecen almacenados en UTC. Las consultas por día calendario aplican `localtime` para clasificar y el filtro Jinja `local_datetime` convierte por separado solo la representación visible.
 - El seed es manual porque una base normal no debe recibir usuarios, contraseñas conocidas o datos ficticios automáticamente.
 - La creación atómica en un archivo temporal evita dejar una base demo parcial. El reemplazo solo está habilitado mediante `--reset` explícito.
-- La primera validación visual humana permitió detectar INC-02, pero no constituye aprobación final. `TESTING_MVP.md` conserva toda la checklist desktop/mobile pendiente para una nueva revisión antes de promover `develop` a `main`.
+- La segunda revisión visual desktop originó el polish de INC-03, pero no completa la checklist general. `TESTING_MVP.md` conserva las validaciones manuales pendientes y mobile todavía no fue aprobado antes de promover `develop` a `main`.
 - Se eliminaron únicamente el template placeholder sin referencias; las menciones históricas del DEVLOG y los atributos HTML `placeholder` se conservaron.
 - La rama prepara evidencia para review y PR hacia `develop`; no autoriza ni realiza una promoción directa a `main`.
 
@@ -934,9 +945,9 @@ Se ejecutó la suite completa con:
 .venv\Scripts\python.exe -m pytest -q
 ```
 
-Resultado actualizado después de INC-02: `289 passed`.
+Resultado actualizado después del polish desktop e INC-03: `296 passed`.
 
-Se agregaron ocho pruebas en la integración original —seis escenarios en `test_mvp_integration.py` y dos del seed en `test_seed_demo.py`— y seis regresiones estructurales de navegación en la corrección visual. Las 283 pruebas previas a INC-02 continúan pasando.
+Se agregaron ocho pruebas en la integración original —seis escenarios en `test_mvp_integration.py` y dos del seed—, seis regresiones estructurales de navegación y siete pruebas de presentación temporal/polish. Las 289 pruebas previas a esta segunda revisión continúan pasando.
 
 También se ejecutó:
 
@@ -950,10 +961,10 @@ La auditoría no encontró stubs activos. Las coincidencias restantes son texto 
 
 ### Resultado
 
-El MVP quedó integrado y respaldado por evidencia automatizada de flujo completo, permisos, errores seguros, rollback, aislamiento, base limpia y datos demo reproducibles. Las incidencias temporal y visual quedaron corregidas y cubiertas por regresión, sin modificar esquema, datos persistidos ni reglas de negocio.
+El MVP quedó integrado y respaldado por evidencia automatizada de flujo completo, permisos, errores seguros, rollback, aislamiento, base limpia y datos demo reproducibles. Las incidencias temporales y visuales quedaron corregidas y cubiertas por regresión, sin modificar esquema, datos persistidos ni reglas de negocio.
 
 ### Pendiente
 
-El Pull Request #31 de `test/integracion-mvp` fue mergeado a `develop` en `665c8e1`. Quedan pendientes la review y el Pull Request de `fix/ui-etapa12` hacia `develop`, además de la nueva validación visual humana registrada en `docs/TESTING_MVP.md`. Después de esas instancias corresponderá revisar un PR separado `develop → main`.
+El Pull Request #31 de `test/integracion-mvp` fue mergeado a `develop` en `665c8e1`. Quedan pendientes la review y el Pull Request de `fix/ui-etapa12` hacia `develop`, además de completar la validación visual humana —especialmente mobile— registrada en `docs/TESTING_MVP.md`. Después de esas instancias corresponderá revisar un PR separado `develop → main`.
 
 El Issue #16 permanece abierto. No se hizo merge ni Pull Request de la corrección visual y no se promovió `develop` a `main`.

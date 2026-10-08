@@ -7,7 +7,7 @@
     <div>
       <p class="sf-kicker text-uppercase mb-1">Detalle histórico</p>
       <h1 class="h2 mb-1">Venta #{{ sale.id_venta }}</h1>
-      <p class="text-secondary mb-0">{{ sale.fecha_hora }}</p>
+      <p class="text-secondary mb-0">{{ sale.fecha_hora | local_datetime }}</p>
     </div>
     <a class="btn btn-outline-secondary" href="{{ url_for('ventas.historial') }}">Volver al historial</a>
   </div>

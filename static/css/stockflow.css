@@ -800,10 +800,15 @@ h6,
 .sf-login-section {
   display: grid;
   min-height: calc(100vh - 15rem);
-  align-items: center;
+  place-items: center;
+}
+
+.sf-login-container {
+  width: min(100%, 29rem);
 }
 
 .sf-login-card {
+  width: 100%;
   max-width: 29rem;
   margin-inline: auto;
 }
@@ -825,7 +830,17 @@ h6,
 }
 
 .sf-quantity-input {
+  width: 5rem;
+  min-width: 5rem;
   max-width: 5rem;
+  flex: 0 0 5rem;
+}
+
+.sf-stock-minimum-input {
+  width: 5.5rem;
+  min-width: 5.5rem;
+  max-width: 5.5rem;
+  flex: 0 0 5.5rem;
 }
 
 .sf-pos-total {

@@ -5,8 +5,8 @@
 - Fecha: 2026-10-08
 - Rama de corrección actual: `fix/ui-etapa12`
 - Base: `develop` en `665c8e147305cc0dcd1b41563a4bafdaf0a3c743`
-- Suite automatizada: `289 passed`
-- Pruebas agregadas: 8 de integración y 6 estructurales de navegación
+- Suite automatizada: `296 passed`
+- Pruebas agregadas: 8 de integración, 6 estructurales de navegación y 7 de polish/presentación temporal
 - Trazabilidad principal: `PB28 · PB29 · PB30`
 
 ## Automatizado
@@ -44,6 +44,12 @@ git diff --check
 `tests/test_ui_navigation.py` agrega seis casos estructurales para la corrección INC-02. Verifican que ADMIN reciba Dashboard, Punto de venta, Caja, Inventario, Productos, Ventas y Estadísticas; que la navegación persista en Caja y Productos; que VENDEDOR vea únicamente sus cinco secciones operativas; y que Catálogo y Login no expongan el sidebar interno. También comprueban que la sección actual se identifique con `aria-current="page"` y que exista el disparador del offcanvas móvil.
 
 Estas pruebas validan la estructura renderizada y los permisos ya existentes. No sustituyen la revisión humana de contraste, composición, scroll, densidad o ergonomía en viewports reales.
+
+### Segunda revisión visual desktop
+
+`tests/test_datetime_display.py` agrega siete casos para el polish posterior: conversión portable de timestamp SQLite UTC a la zona local del sistema, fallbacks seguros, soporte de valores `datetime`, render local en Dashboard, Caja, Ventas, detalle y Movimientos, y presencia de anchos específicos en los inputs numéricos de Inventario y POS.
+
+La persistencia continúa en UTC. El filtro Jinja `local_datetime` resuelve únicamente la representación textual `dd/mm/aaaa hh:mm`; la clasificación diaria de Estadísticas conserva de forma independiente `DATE(v.fecha_hora, 'localtime')`.
 
 ### Flujos críticos cross-module
 
@@ -110,7 +116,7 @@ El seed no se importa ni ejecuta desde `create_app()` y nunca crea usuarios auto
 
 ## Manual / visual
 
-La primera validación humana detectó INC-02: el shell y la navegación no estaban alineados con la identidad visual definida para Etapa 12. La corrección fue implementada y cubierta estructuralmente, pero todavía requiere una nueva revisión humana completa en navegador. La evidencia automatizada valida rutas, permisos, contenido funcional y estructura Bootstrap; no sustituye la revisión visual desktop/mobile.
+La primera validación humana detectó INC-02 y aprobó en general el shell corregido. Una segunda revisión desktop encontró tres ajustes puntuales: centrado de Login, legibilidad de inputs numéricos y timestamps UTC expuestos sin conversión visual. El polish fue implementado y cubierto automáticamente, pero la checklist general permanece abierta y mobile todavía no fue validado. La evidencia automatizada no sustituye esa revisión humana.
 
 Pendiente de validación visual humana antes de promover `develop` a `main`:
 
@@ -137,6 +143,7 @@ Pendiente de validación visual humana antes de promover `develop` a `main`:
 | --- | --- | --- | --- | --- |
 | INC-01 | Venta cercana al cambio de día local | Corregido | `CURRENT_TIMESTAMP` persiste UTC, pero los filtros diarios comparaban `DATE(fecha_hora)` contra fechas locales de Python. Dashboard y Estadísticas podían excluir una Venta correctamente persistida. | Las consultas usan `DATE(v.fecha_hora, 'localtime')` para filtrar, seleccionar, agrupar y ordenar; una regresión portable verifica resumen y serie diaria. |
 | INC-02 | Shell visual y navegación interna de Etapa 12 | Corregido; validación humana pendiente | Las vistas usaban una barra superior mínima y estilos Bootstrap claros, sin navegación persistente, jerarquía visual ni diferenciación suficiente por rol. | Se incorporaron sidebar desktop, offcanvas móvil, menú ADMIN/VENDEDOR, estado activo accesible, header público separado y tema oscuro centralizado. Se agregaron seis regresiones estructurales; la checklist manual permanece abierta. |
+| INC-03 | Timestamps UTC mostrados en interfaz | Corregido; mobile pendiente | Caja, Dashboard, Ventas y Movimientos proyectaban directamente valores SQLite UTC, por lo que la hora visible podía diferir de la hora local del equipo. | Se registró el filtro Jinja `local_datetime`, que interpreta strings SQLite como UTC y usa `astimezone()` para presentar la zona local. No cambia schema, datos ni agregaciones de Estadísticas. |
 
 Durante la construcción de las nuevas pruebas se corrigieron dos supuestos del propio test: el historial de movimientos es ADMIN y las conexiones SQLite deben cerrarse explícitamente antes de reemplazar un archivo en Windows. Ninguno requirió modificar reglas o código funcional del MVP.
 
@@ -160,4 +167,4 @@ La búsqueda de `TODO`, `FIXME`, `NotImplemented` y `placeholder` no encontró s
 
 ## Resultado
 
-La evidencia automatizada del MVP queda aprobada con `289 passed`. INC-01 e INC-02 quedaron cubiertas por regresiones sin modificar esquema ni reglas de negocio. La promoción queda condicionada a review de la corrección, Pull Request hacia `develop` y validación visual humana completa.
+La evidencia automatizada del MVP queda aprobada con `296 passed`. INC-01, INC-02 e INC-03 quedaron cubiertas por regresiones sin modificar esquema ni reglas de negocio. La promoción queda condicionada a review de la corrección, Pull Request hacia `develop` y validación visual humana completa; mobile permanece pendiente.

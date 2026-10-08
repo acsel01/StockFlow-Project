@@ -81,7 +81,7 @@
           <h2 class="h5">Estado de Caja</h2>
           {% if open_cash_register %}
             <p class="mb-1"><strong>ABIERTA</strong> · Caja #{{ open_cash_register.id_caja }}</p>
-            <p class="text-secondary small">Desde {{ open_cash_register.fecha_apertura }}</p>
+            <p class="text-secondary small">Desde {{ open_cash_register.fecha_apertura | local_datetime }}</p>
           {% else %}
             <p class="text-secondary">No hay una Caja abierta en este momento.</p>
           {% endif %}

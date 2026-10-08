@@ -22,7 +22,7 @@
           <div class="card-body">
             <h2 class="h5">Resumen de la caja</h2>
             <p class="text-secondary mb-4">
-              Abierta el {{ open_cash_register.fecha_apertura }} por
+              Abierta el {{ open_cash_register.fecha_apertura | local_datetime }} por
               {{ open_cash_register.apertura_nombre }}
               {{ open_cash_register.apertura_apellido or "" }}.
             </p>
@@ -116,7 +116,7 @@
             <div class="card-body p-4">
               <h2 class="h5">Último cierre</h2>
               <p class="text-secondary small">
-                Cerrada el {{ last_closed_cash_register.fecha_cierre }} por
+                Cerrada el {{ last_closed_cash_register.fecha_cierre | local_datetime }} por
                 {{ last_closed_cash_register.cierre_nombre }}
                 {{ last_closed_cash_register.cierre_apellido or "" }}.
               </p>

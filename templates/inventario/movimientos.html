@@ -57,7 +57,7 @@
       <tbody>
         {% for movement in movements %}
           <tr>
-            <td class="text-nowrap">{{ movement["fecha_hora"] }}</td>
+            <td class="text-nowrap">{{ movement["fecha_hora"] | local_datetime }}</td>
             <td>{{ movement["producto_nombre"] }}</td>
             <td>{{ movement["tipo"]|replace('_', ' ')|title }}</td>
             <td class="fw-semibold {{ 'text-success' if movement['cantidad_delta'] > 0 else 'text-danger' }}">

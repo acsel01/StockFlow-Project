@@ -48,7 +48,7 @@
           {% for sale in sales %}
             <tr>
               <td class="fw-semibold">#{{ sale.id_venta }}</td>
-              <td>{{ sale.fecha_hora }}</td>
+              <td>{{ sale.fecha_hora | local_datetime }}</td>
               <td>{{ sale.vendedor_nombre }} {{ sale.vendedor_apellido or "" }}</td>
               <td>#{{ sale.id_caja }}</td>
               <td><span class="badge text-bg-secondary">{{ sale.medio_pago }}</span></td>
