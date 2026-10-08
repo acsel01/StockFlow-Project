@@ -227,4 +227,4 @@ El Issue #9 quedó implementado y probado: ADMIN puede gestionar Productos y Cat
 
 ### Pendiente
 
-Pull Request #21 abierto desde `feature/productos` hacia `develop`, revisado y pendiente de merge. No se avanzó con el Issue #10.
+Pull Request #21 mergeado a `develop` mediante el merge commit `db80030`. El Issue #9 fue cerrado como completado y no queda trabajo pendiente para este Issue.
