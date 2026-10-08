@@ -388,4 +388,4 @@ El Issue #12 quedó implementado y probado: ambos roles internos pueden gestiona
 
 ### Pendiente
 
-El Issue #12 queda listo para revisión. Falta subir `feature/caja` al remoto y abrir el Pull Request; no se realizó merge ni se cerró el Issue.
+Pull Request #23 abierto desde `feature/caja` hacia `develop`, revisado y pendiente de merge. No se avanzó con los Issues #13 ni #11.
