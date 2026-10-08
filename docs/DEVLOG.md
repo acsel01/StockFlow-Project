@@ -700,4 +700,4 @@ El Issue #14 quedó implementado y probado: Dashboard reutiliza información ope
 
 ### Pendiente
 
-El Issue #14 queda listo para revisión. Falta subir `feature/estadisticas` al remoto y abrir el Pull Request hacia `develop`; no se realizó merge ni se cerró el Issue.
+Pull Request #27 mergeado a `develop` mediante el merge commit `df1a9e3`. El Issue #14 fue cerrado como completado y no queda trabajo pendiente para este Issue.
