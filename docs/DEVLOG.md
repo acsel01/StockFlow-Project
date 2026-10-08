@@ -923,6 +923,16 @@ La persistencia continúa usando UTC y no se modificaron schema, datos, transacc
 
 En el mismo polish se centró el panel de Login con grid y ancho controlado, se agregó ancho estable al stock mínimo de Inventario y se reforzó `.sf-quantity-input` en búsqueda y carrito del POS. Siete pruebas nuevas cubren utilidad, fallbacks, páginas afectadas y clases estructurales.
 
+#### Cierre de validación visual humana
+
+Axel completó y aprobó la validación visual humana después del polish final. En desktop verificó Catálogo público, Login, Dashboard ADMIN, POS, Caja cerrada y abierta, Inventario, Productos, Ventas y Estadísticas, junto con navegación persistente, módulo activo, timestamps locales e inputs numéricos legibles.
+
+En viewport mobile `390×844` verificó Dashboard, menú hamburguesa y offcanvas completo, navegación ADMIN, POS, Caja, Inventario, Productos, Ventas, Estadísticas, Catálogo público y Login. No se detectó overflow horizontal global: el sidebar se reemplaza por el offcanvas; cards, KPIs, formularios, POS y bloques de Estadísticas se apilan; y el Catálogo pasa de grid desktop a una columna.
+
+Las tablas de Inventario, Productos, Ventas y productos del POS mantienen su estructura tabular con scroll horizontal contenido por `table-responsive`. Se acepta como decisión responsive deliberada para preservar legibilidad y no como incidencia, porque no provoca overflow global de la página.
+
+INC-02 e INC-03 quedan resueltas. La revisión humana no encontró nuevos bloqueantes después del polish.
+
 ### Decisiones técnicas
 
 - #16 agrega evidencia de integración, no un módulo nuevo, porque todas las capacidades de negocio del MVP ya estaban implementadas.
@@ -933,7 +943,7 @@ En el mismo polish se centró el panel de Login con grid y ancho controlado, se 
 - Los timestamps permanecen almacenados en UTC. Las consultas por día calendario aplican `localtime` para clasificar y el filtro Jinja `local_datetime` convierte por separado solo la representación visible.
 - El seed es manual porque una base normal no debe recibir usuarios, contraseñas conocidas o datos ficticios automáticamente.
 - La creación atómica en un archivo temporal evita dejar una base demo parcial. El reemplazo solo está habilitado mediante `--reset` explícito.
-- La segunda revisión visual desktop originó el polish de INC-03, pero no completa la checklist general. `TESTING_MVP.md` conserva las validaciones manuales pendientes y mobile todavía no fue aprobado antes de promover `develop` a `main`.
+- La validación visual humana desktop y mobile `390×844` quedó completada después del polish. Las tablas operativas conservan scroll horizontal contenido en mobile para mantener su legibilidad sin generar overflow global.
 - Se eliminaron únicamente el template placeholder sin referencias; las menciones históricas del DEVLOG y los atributos HTML `placeholder` se conservaron.
 - La rama prepara evidencia para review y PR hacia `develop`; no autoriza ni realiza una promoción directa a `main`.
 
@@ -961,10 +971,15 @@ La auditoría no encontró stubs activos. Las coincidencias restantes son texto 
 
 ### Resultado
 
-El MVP quedó integrado y respaldado por evidencia automatizada de flujo completo, permisos, errores seguros, rollback, aislamiento, base limpia y datos demo reproducibles. Las incidencias temporales y visuales quedaron corregidas y cubiertas por regresión, sin modificar esquema, datos persistidos ni reglas de negocio.
+El MVP quedó integrado y respaldado por evidencia automatizada de flujo completo, permisos, errores seguros, rollback, aislamiento, base limpia y datos demo reproducibles. La validación visual humana desktop/mobile quedó aprobada; las incidencias temporales y visuales están resueltas y cubiertas por regresión, sin modificar esquema, datos persistidos ni reglas de negocio.
 
 ### Pendiente
 
-El Pull Request #31 de `test/integracion-mvp` fue mergeado a `develop` en `665c8e1`. Quedan pendientes la review y el Pull Request de `fix/ui-etapa12` hacia `develop`, además de completar la validación visual humana —especialmente mobile— registrada en `docs/TESTING_MVP.md`. Después de esas instancias corresponderá revisar un PR separado `develop → main`.
+El Pull Request #31 de `test/integracion-mvp` fue mergeado a `develop` en `665c8e1`. La validación visual humana quedó completada. Solo resta:
+
+- abrir el Pull Request `fix/ui-etapa12 → develop`;
+- hacer el merge después de la review;
+- cerrar el Issue #16;
+- posteriormente revisar la promoción `develop → main`.
 
 El Issue #16 permanece abierto. No se hizo merge ni Pull Request de la corrección visual y no se promovió `develop` a `main`.
