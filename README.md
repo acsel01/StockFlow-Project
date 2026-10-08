@@ -249,7 +249,7 @@ Con el entorno virtual activo:
 python -m pytest -q
 ```
 
-La suite del corte del Issue #16 contiene `282` pruebas. Incluye cobertura de base de datos, autenticación, permisos, Productos, Categorías, Inventario, Caja, Ventas, POS, Dashboard, Estadísticas, Catálogo, seed demo y flujos cross-module del MVP.
+La suite del corte del Issue #16 contiene `283` pruebas. Incluye cobertura de base de datos, autenticación, permisos, Productos, Categorías, Inventario, Caja, Ventas, POS, Dashboard, Estadísticas, Catálogo, seed demo y flujos cross-module del MVP.
 
 Compilación adicional usada para la revisión:
 

@@ -5,8 +5,8 @@
 - Fecha: 2026-10-08
 - Rama: `test/integracion-mvp`
 - Base: `develop` en `87bd4cc7f601d64507efde2ef673fc469e635177`
-- Suite automatizada: `282 passed`
-- Pruebas agregadas en este bloque: 7
+- Suite automatizada: `283 passed`
+- Pruebas agregadas en este bloque: 8
 - Trazabilidad principal: `PB28 · PB29 · PB30`
 
 ## Automatizado
@@ -40,13 +40,14 @@ git diff --check
 
 ### Flujos críticos cross-module
 
-`tests/test_mvp_integration.py` agrega cinco escenarios:
+`tests/test_mvp_integration.py` agrega seis escenarios:
 
 1. Flujo end-to-end mediante HTTP: Catálogo anónimo → login VENDEDOR → apertura de Caja → carrito POS → confirmación en efectivo → Venta/Detalle → Inventario/Movimiento → Historial/Caja/Dashboard → Estadísticas ADMIN → Catálogo actualizado → cierre de Caja.
 2. Confirmación sin Caja abierta: no persiste Venta, Detalle ni Movimiento; conserva stock y carrito.
 3. Stock reducido después de agregar al carrito: la confirmación relee existencias, rechaza la operación completa y conserva el carrito para corregirlo.
 4. Matriz representativa de accesos para visitante, VENDEDOR y ADMIN.
 5. Inicio desde una ruta de base inexistente: `create_app()` crea las nueve tablas, activa claves foráneas y responde correctamente en `/health`.
+6. Clasificación temporal portable: una Venta con timestamp UTC cercano al cambio de día se filtra y agrupa según la fecha calendario local de la máquina.
 
 El flujo principal parte con stock mayor al mínimo y Catálogo `Disponible`; una Venta reduce el stock hasta el mínimo y la siguiente consulta pública muestra `Pocas unidades`. El precio público continúa dependiendo de `mostrar_precio_catalogo` y nunca usa un importe alternativo.
 
@@ -122,7 +123,7 @@ Pendiente de validación visual humana antes de promover `develop` a `main`:
 
 | ID | Caso | Resultado | Incidencia | Resolución |
 | --- | --- | --- | --- | --- |
-| — | Suite e integración del MVP | Aprobado | No se detectaron incidencias funcionales nuevas durante este bloque. | No aplica. |
+| INC-01 | Venta cercana al cambio de día local | Corregido | `CURRENT_TIMESTAMP` persiste UTC, pero los filtros diarios comparaban `DATE(fecha_hora)` contra fechas locales de Python. Dashboard y Estadísticas podían excluir una Venta correctamente persistida. | Las consultas usan `DATE(v.fecha_hora, 'localtime')` para filtrar, seleccionar, agrupar y ordenar; una regresión portable verifica resumen y serie diaria. |
 
 Durante la construcción de las nuevas pruebas se corrigieron dos supuestos del propio test: el historial de movimientos es ADMIN y las conexiones SQLite deben cerrarse explícitamente antes de reemplazar un archivo en Windows. Ninguno requirió modificar reglas o código funcional del MVP.
 
@@ -146,4 +147,4 @@ La búsqueda de `TODO`, `FIXME`, `NotImplemented` y `placeholder` no encontró s
 
 ## Resultado
 
-La evidencia automatizada del MVP queda aprobada con `282 passed`. No se detectaron bugs funcionales nuevos ni se modificaron reglas de negocio. La promoción queda condicionada a review, Pull Request hacia `develop` y validación visual humana.
+La evidencia automatizada del MVP queda aprobada con `283 passed`. La incidencia temporal quedó reproducida y corregida sin cambiar cómo se almacenan timestamps, migrar datos o modificar reglas de negocio. La promoción queda condicionada a review, Pull Request hacia `develop` y validación visual humana.

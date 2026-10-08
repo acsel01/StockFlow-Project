@@ -1,5 +1,5 @@
 from copy import deepcopy
-from datetime import date
+from datetime import date, datetime, time, timezone
 from decimal import Decimal
 
 import pytest
@@ -9,6 +9,7 @@ from app import create_app
 from database.db import get_db
 from routes.caja import get_cash_summary
 from services.estadisticas_service import (
+    get_daily_sales,
     get_estimated_profit,
     get_sales_summary,
     get_top_selling_products,
@@ -592,3 +593,89 @@ def test_application_starts_from_missing_database_with_full_schema(tmp_path):
         "application": "StockFlow",
         "status": "ok",
     }
+
+
+def test_utc_sale_timestamp_is_classified_by_local_calendar_date(app):
+    ids = app.config["TEST_IDS"]
+    local_now = datetime.now().astimezone()
+    local_timezone = local_now.tzinfo
+    local_offset = local_now.utcoffset()
+    offset_seconds = local_offset.total_seconds() if local_offset is not None else 0
+    if offset_seconds < 0:
+        controlled_time = time(23, 59)
+    elif offset_seconds > 0:
+        controlled_time = time(0, 1)
+    else:
+        controlled_time = time(0, 30)
+    local_datetime = datetime.combine(
+        local_now.date(),
+        controlled_time,
+        tzinfo=local_timezone,
+    )
+    utc_datetime = local_datetime.astimezone(timezone.utc)
+    utc_timestamp = utc_datetime.strftime("%Y-%m-%d %H:%M:%S")
+    local_day = local_datetime.date()
+    if offset_seconds:
+        assert utc_datetime.date() != local_day
+
+    with app.app_context():
+        connection = get_db()
+        cash_register_id = _insert_cash_register(
+            connection,
+            ids["commerce_a"],
+            ids["admin_a"],
+            "0.00",
+        )
+        sale_id = connection.execute(
+            """
+            INSERT INTO venta (
+                id_caja,
+                id_usuario,
+                fecha_hora,
+                subtotal,
+                descuento,
+                total,
+                medio_pago,
+                estado
+            ) VALUES (?, ?, ?, 123.45, 0, 123.45, 'DEBITO', 'COMPLETADA')
+            """,
+            (cash_register_id, ids["vendor_a"], utc_timestamp),
+        ).lastrowid
+        connection.execute(
+            """
+            INSERT INTO detalle_venta (
+                id_venta,
+                id_producto,
+                cantidad,
+                precio_unitario,
+                subtotal
+            ) VALUES (?, ?, 1, 123.45, 123.45)
+            """,
+            (sale_id, ids["product_a"]),
+        )
+        connection.commit()
+
+        summary = get_sales_summary(
+            connection,
+            ids["commerce_a"],
+            local_day,
+            local_day,
+        )
+        daily_sales = get_daily_sales(
+            connection,
+            ids["commerce_a"],
+            local_day,
+            local_day,
+        )
+
+    assert summary == {
+        "total_sold": Decimal("123.45"),
+        "sale_count": 1,
+        "average_ticket": Decimal("123.45"),
+        "units_sold": 1,
+    }
+    assert daily_sales == [{
+        "sale_date": local_day.isoformat(),
+        "sale_count": 1,
+        "total_sold": Decimal("123.45"),
+    }]

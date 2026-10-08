@@ -830,7 +830,7 @@ Validar como conjunto el MVP ya implementado, agregar evidencia cross-module de 
 
 ### Cambios realizados
 
-- Se agregaron cinco pruebas de integración del MVP que recorren rutas HTTP, persistencia y consumidores posteriores.
+- Se agregaron seis pruebas de integración del MVP que recorren rutas HTTP, persistencia y consumidores posteriores.
 - Se implementaron escenarios negativos cross-module para ausencia de Caja y cambio de stock antes de confirmar.
 - Se agregó una matriz representativa de permisos para visitante, VENDEDOR y ADMIN.
 - Se verificó el inicio real desde un archivo SQLite inexistente, las nueve tablas, claves foráneas y `/health`.
@@ -839,6 +839,7 @@ Validar como conjunto el MVP ya implementado, agregar evidencia cross-module de 
 - Se actualizó README para describir en presente el MVP real, instalación, configuración, ejecución, demo, tests y estrategia de ramas.
 - Se creó `docs/TESTING_MVP.md` con alcance automatizado, rollback, aislamiento, checklist visual e incidencias.
 - Se auditó deuda y rutas. El template placeholder no tenía referencias activas y fue eliminado.
+- Durante la review se corrigió la clasificación diaria de Ventas para convertir el timestamp UTC persistido a fecha local antes de filtrar o agrupar Estadísticas.
 
 ### Archivos creados o modificados
 
@@ -849,6 +850,7 @@ Validar como conjunto el MVP ya implementado, agregar evidencia cross-module de 
 - `README.md`
 - `docs/TESTING_MVP.md`
 - `docs/DEVLOG.md`
+- `services/estadisticas_service.py`
 - `templates/placeholder.html` (eliminado por no tener referencias)
 
 ### Pruebas de integración
@@ -895,7 +897,9 @@ El documento presenta StockFlow como MVP/demo académico funcional y no como sof
 
 ### Incidencias reales
 
-No se detectaron incidencias funcionales nuevas durante este bloque.
+Se detectó que `Venta.fecha_hora` se persiste mediante `CURRENT_TIMESTAMP` de SQLite en UTC, mientras los períodos diarios se resolvían con la fecha local de Python y las consultas usaban `DATE(v.fecha_hora)` sin conversión. En zonas distintas de UTC, una Venta cercana a medianoche podía existir correctamente en Historial y Caja, pero quedar clasificada en otro día para Dashboard y Estadísticas.
+
+La resolución aplica `DATE(v.fecha_hora, 'localtime')` de forma consistente al filtrar, seleccionar, agrupar y ordenar por fecha. No se modificaron timestamps persistidos, esquema ni datos históricos. Una prueba portable construye una hora local controlada, la convierte a UTC y comprueba que resumen y serie diaria la asignen al día local.
 
 Durante la construcción de pruebas se corrigieron dos supuestos del propio test: VENDEDOR no accede al historial administrativo de movimientos y las conexiones SQLite deben cerrarse explícitamente antes de reemplazar un archivo en Windows. No se modificó código funcional por estos ajustes.
 
@@ -906,6 +910,7 @@ Durante la construcción de pruebas se corrigieron dos supuestos del propio test
 - La atomicidad se demuestra con la prueba existente de fallo profundo y con nuevos negativos que verifican ausencia de persistencia parcial.
 - El aislamiento se verifica con dos comercios y snapshots de stock, Caja y Ventas, además de consultas separadas de Dashboard, Estadísticas y Catálogo.
 - El efecto Venta → Catálogo se comprueba recargando la ruta pública después del descuento real de Inventario; no se almacena disponibilidad.
+- Los timestamps de Venta permanecen almacenados en UTC. Solo las consultas por día calendario aplican `localtime`, alineándose con `date.today()` usado por Dashboard y la resolución de períodos.
 - El seed es manual porque una base normal no debe recibir usuarios, contraseñas conocidas o datos ficticios automáticamente.
 - La creación atómica en un archivo temporal evita dejar una base demo parcial. El reemplazo solo está habilitado mediante `--reset` explícito.
 - No se realizó ni se declara una validación visual humana. `TESTING_MVP.md` conserva una checklist desktop/mobile pendiente antes de promover `develop` a `main`.
@@ -920,9 +925,9 @@ Se ejecutó la suite completa con:
 .venv\Scripts\python.exe -m pytest -q
 ```
 
-Resultado: `282 passed`.
+Resultado: `283 passed`.
 
-Se agregaron siete pruebas: cinco escenarios en `test_mvp_integration.py` y dos del seed en `test_seed_demo.py`. Las 275 pruebas recibidas continúan pasando.
+Se agregaron ocho pruebas: seis escenarios en `test_mvp_integration.py` y dos del seed en `test_seed_demo.py`. Las 275 pruebas recibidas continúan pasando.
 
 También se ejecutó:
 
@@ -936,10 +941,10 @@ La auditoría no encontró stubs activos. Las coincidencias restantes son texto 
 
 ### Resultado
 
-El MVP quedó integrado y respaldado por evidencia automatizada de flujo completo, permisos, errores seguros, rollback, aislamiento, base limpia y datos demo reproducibles. No fue necesario corregir código funcional ni modificar el esquema.
+El MVP quedó integrado y respaldado por evidencia automatizada de flujo completo, permisos, errores seguros, rollback, aislamiento, base limpia y datos demo reproducibles. La incidencia de clasificación temporal quedó corregida en consultas y cubierta por regresión, sin modificar el esquema ni los datos persistidos.
 
 ### Pendiente
 
 Quedan pendientes la review de `test/integracion-mvp`, el Pull Request hacia `develop` y la validación visual humana registrada en `docs/TESTING_MVP.md`. Después de esas instancias corresponderá revisar un PR separado `develop → main`.
 
-El Issue #16 permanece abierto. No se hizo push, merge ni Pull Request desde esta rama.
+El Issue #16 permanece abierto. La rama continúa en review; no se hizo merge ni Pull Request.

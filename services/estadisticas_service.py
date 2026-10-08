@@ -108,7 +108,7 @@ def get_daily_sales(connection, commerce_id, date_from=None, date_to=None):
     rows = connection.execute(
         f"""
         SELECT
-            DATE(v.fecha_hora) AS sale_date,
+            DATE(v.fecha_hora, 'localtime') AS sale_date,
             COUNT(v.id_venta) AS sale_count,
             COALESCE(SUM(v.total), 0) AS total_sold
         FROM venta AS v
@@ -117,8 +117,8 @@ def get_daily_sales(connection, commerce_id, date_from=None, date_to=None):
             c.id_comercio = ?
             AND v.estado = 'COMPLETADA'
             {date_clause}
-        GROUP BY DATE(v.fecha_hora)
-        ORDER BY DATE(v.fecha_hora)
+        GROUP BY DATE(v.fecha_hora, 'localtime')
+        ORDER BY DATE(v.fecha_hora, 'localtime')
         """,
         [commerce_id, *parameters],
     ).fetchall()
@@ -297,7 +297,7 @@ def _date_filter(date_from, date_to):
     if date_from is None or date_to is None:
         raise ValueError("Los límites del período deben estar completos.")
     return (
-        "AND DATE(v.fecha_hora) BETWEEN ? AND ?",
+        "AND DATE(v.fecha_hora, 'localtime') BETWEEN ? AND ?",
         [date_from.isoformat(), date_to.isoformat()],
     )
 
