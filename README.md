@@ -290,13 +290,13 @@ main
 - `test/*`: pruebas e integración;
 - `docs/*`: documentación viva.
 
-Los cambios se revisan mediante Pull Request hacia `develop`. La integración técnica se incorporó mediante el PR #31, el QA visual y sus correcciones mediante el PR #32, y el cierre documental mediante el PR #33. El Issue #16 está cerrado como `completed`. La promoción `develop → main` permanece como un paso separado y pendiente de aprobación.
+Los cambios se revisan mediante Pull Request hacia `develop`. La integración técnica se incorporó mediante el PR #31, el QA visual y sus correcciones mediante el PR #32, y el cierre documental mediante el PR #33. El Issue #16 está cerrado como `completed`. El PR #35 sincronizó el README con el QA final y la promoción revisada de `develop → main` se completó mediante el PR #34.
 
 ## Estado actual
 
-El MVP académico funcional está implementado e integrado en `develop`. La suite final registra `296 passed`; la validación humana fue aprobada tanto en desktop como en mobile con viewport `390×844`, y la checklist visual quedó completada 16/16. INC-01, INC-02 e INC-03 están resueltas.
+El MVP académico funcional fue integrado en `main` mediante el PR #34, con commit de merge `84b0932c892eed24369321fa8ae11623ca7bd8be`. La última ejecución local previa a la promoción registró `296 passed`; la validación humana fue aprobada tanto en desktop como en mobile con viewport `390×844`, y la checklist visual quedó completada 16/16. INC-01, INC-02 e INC-03 están resueltas.
 
-El PR #34 `develop → main` permanece abierto como draft para la revisión pre-main. La promoción todavía no fue aprobada ni integrada a `main`.
+El PR #34 `develop → main` fue aprobado e integrado el 08/10/2026. El PR #35, con la actualización documental previa de QA, también fue integrado. La versión publicada en `main` mantiene el mismo contenido funcional que el candidato validado.
 
 StockFlow sigue siendo un **MVP/demo académico funcional**, no una solución comercial lista para producción.
 
