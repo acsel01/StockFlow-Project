@@ -145,4 +145,4 @@ El Issue #8 quedó implementado y cubierto por pruebas: los usuarios activos pue
 
 ### Pendiente
 
-Revisión local, push de `feature/autenticacion` y posterior Pull Request hacia `develop`. No se realizó merge ni se avanzó con otros Issues.
+Pull Request #20 abierto desde `feature/autenticacion` hacia `develop`, revisado y pendiente de merge. No se avanzó con otros Issues.
